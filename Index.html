@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustBus Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+               <div class="logo">
+    <img src="JustBus_Main_Logo.png" alt="JustBus Logo" class="logo-img">
+   <h2>JustBus</h2>
+                <p>Admin Panel</p>
+</div>
+
+                
+           
+            <nav class="menu">
+                <ul>
+                    <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#"><i class="fas fa-map-marked-alt"></i> Live Map</a></li>
+                    <li><a href="#"><i class="fas fa-route"></i> Manage Routes</a></li>
+                    <li><a href="#"><i class="fas fa-bus-alt"></i> Manage Buses</a></li>
+                    <li><a href="#"><i class="fas fa-users"></i> Manage Drivers</a></li>
+                    <li><a href="#"><i class="fas fa-chart-bar"></i> Reports & Analytics</a></li>
+                    <li><a href="#"><i class="fas fa-star"></i> Driver Ratings</a></li>
+                    <li><a href="#"><i class="fas fa-question-circle"></i> Support Center</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=System+Admin&background=4A90E2&color=fff" alt="Admin Avatar">
+                <div>
+                    <h4>System Admin</h4>
+                    <p>admin@justbus.edu</p>
+                </div>
+                <a href="#" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search for route, bus, driver...">
+                </div>
+                <div class="header-actions">
+                    <button class="notif-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <button class="add-btn">
+                        <i class="fas fa-plus"></i> Add New Route
+                    </button>
+                </div>
+            </header>
+
+            <!-- Quick Stats Cards -->
+            <section class="stats-cards">
+                <div class="card">
+                    <div class="card-icon" style="background-color: #4CAF50;">
+                        <i class="fas fa-bus"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3>12</h3>
+                        <p>Active Buses</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background-color: #2196F3;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3>847</h3>
+                        <p>Today's Passengers</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background-color: #FF9800;">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3>8</h3>
+                        <p>Active Routes</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background-color: #9C27B0;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3>4.7</h3>
+                        <p>Avg. Rating</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Map Section -->
+            <section class="live-map-section">
+                <h2><i class="fas fa-map-marked-alt"></i> Live Bus Map</h2>
+                <div class="map-placeholder">
+                    <!-- Real map integration would go here (Leaflet/Google Maps) -->
+                    <p>Interactive map showing real-time bus locations and status.</p>
+                    <div class="map-legend">
+                        <span><i class="fas fa-bus" style="color: #4CAF50;"></i> Moving Bus</span>
+                        <span><i class="fas fa-bus" style="color: #FF9800;"></i> Stopped Bus</span>
+                        <span><i class="fas fa-map-marker-alt" style="color: #2196F3;"></i> Bus Stop</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section class="reports-section">
+                <h2><i class="fas fa-chart-bar"></i> Quick Reports</h2>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h4>Seat Occupancy Rate</h4>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 78%;"></div>
+                        </div>
+                        <p>78% occupancy today</p>
+                    </div>
+                    <div class="report-card">
+                        <h4>Passenger Gender Ratio</h4>
+                        <div class="gender-ratio">
+                            <div class="male-ratio">65%</div>
+                            <div class="female-ratio">35%</div>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <h4>Busiest Routes</h4>
+                        <ul class="busy-routes">
+                            <li>Engineering Route <span class="badge">High</span></li>
+                            <li>Medical Route <span class="badge">Medium</span></li>
+                            <li>Business Route <span class="badge">Low</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Driver Ratings Section -->
+            <section class="ratings-section">
+                <h2><i class="fas fa-star"></i> Recent Driver Ratings</h2>
+                <div class="ratings-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Driver Name</th>
+                                <th>Avg. Rating</th>
+                                <th>Conduct</th>
+                                <th>Driving</th>
+                                <th>Speed Adherence</th>
+                                <th>Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Ahmed Mohamed</td>
+                                <td><span class="rating-badge">4.8</span></td>
+                                <td>4.9</td>
+                                <td>4.7</td>
+                                <td>4.8</td>
+                                <td><button class="view-comments-btn">View Comments</button></td>
+                            </tr>
+                            <tr>
+                                <td>Sami Al-Khalid</td>
+                                <td><span class="rating-badge">4.6</span></td>
+                                <td>4.8</td>
+                                <td>4.5</td>
+                                <td>4.5</td>
+                                <td><button class="view-comments-btn">View Comments</button></td>
+                            </tr>
+                            <tr>
+                                <td>Khaled Al-Wazzan</td>
+                                <td><span class="rating-badge">4.3</span></td>
+                                <td>4.2</td>
+                                <td>4.4</td>
+                                <td>4.3</td>
+                                <td><button class="view-comments-btn">View Comments</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
