@@ -77,20 +77,49 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
     }).addTo(mapInstance.current);
   }, []);
 
+  const basePathsRef = useRef({});
+
   useEffect(() => {
     if (!mapInstance.current) return;
+
+    // Draw static base routes ONCE to give context
+    Object.keys(ROUTE_PATHS).forEach(routeName => {
+        if (!basePathsRef.current[routeName]) {
+            const poly = L.polyline(ROUTE_PATHS[routeName], {
+                color: ROUTE_COLORS[routeName],
+                weight: 5,
+                opacity: 0.75, // Increased visibility based on feedback
+                dashArray: '8, 8'
+            }).addTo(mapInstance.current);
+            basePathsRef.current[routeName] = poly;
+        }
+    });
+
+    // Update static routes visibility based on active filter
+    Object.keys(basePathsRef.current).forEach(routeName => {
+        const poly = basePathsRef.current[routeName];
+        if (activeRoute && routeName === activeRoute) {
+             poly.setStyle({ opacity: 0.75 }); // show clearly ONLY if it's the active route
+        } else {
+             poly.setStyle({ opacity: 0 }); // hide by default or if not selected
+        }
+    });
     
     // ==========================================
     // 1. نظام الـ Zoom والـ Focus الذكي
     // ==========================================
+    let clearedTracked = false;
+    let clearedRoute = false;
+
     if (trackedBusId && trackedBusId !== lastTrackedRef.current) {
       const bus = buses.find(b => String(b.busId) === String(trackedBusId) || b.plateNumber === trackedBusId);
       if (bus && bus.lat && bus.lng) {
         mapInstance.current.setView([bus.lat, bus.lng], 16, { animate: true, duration: 1.5 });
-        lastTrackedRef.current = trackedBusId; // تحديث فقط عند النجاح
+        lastTrackedRef.current = trackedBusId;
       }
-    } else if (!trackedBusId) {
+    } else if (!trackedBusId && lastTrackedRef.current) {
       lastTrackedRef.current = null;
+      clearedTracked = true;
     }
 
     if (activeRoute && activeRoute !== lastActiveRouteRef.current) {
@@ -99,20 +128,31 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
          return rName === activeRoute;
       });
       const validCoords = routeBuses.filter(b => b.lat && b.lng).map(b => [b.lat, b.lng]);
+      
+      const bounds = L.latLngBounds([]);
+      let hasBounds = false;
+
       if (validCoords.length > 0) {
-          const bounds = L.latLngBounds(validCoords);
-          if (ROUTE_PATHS[activeRoute]) {
-              ROUTE_PATHS[activeRoute].forEach(coord => bounds.extend(coord));
-          }
-          mapInstance.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: true });
-          lastActiveRouteRef.current = activeRoute; // تحديث فقط عند النجاح
+          validCoords.forEach(c => bounds.extend(c));
+          hasBounds = true;
       }
-    } else if (!activeRoute) {
+      // Always include the actual route path so it zooms even if empty
+      if (ROUTE_PATHS[activeRoute]) {
+          ROUTE_PATHS[activeRoute].forEach(coord => bounds.extend(coord));
+          hasBounds = true;
+      }
+
+      if (hasBounds) {
+          mapInstance.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: true });
+          lastActiveRouteRef.current = activeRoute;
+      }
+    } else if (!activeRoute && lastActiveRouteRef.current) {
       lastActiveRouteRef.current = null;
+      clearedRoute = true;
     }
 
     // Return to default ONLY if both are cleared
-    if (!trackedBusId && !activeRoute && (lastTrackedRef.current || lastActiveRouteRef.current)) {
+    if (!trackedBusId && !activeRoute && (clearedTracked || clearedRoute)) {
       mapInstance.current.setView([31.9539, 35.9106], 12, { animate: true });
     }
 
@@ -142,7 +182,8 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
       const isEmergency = bus.status === 'fault' || bus.status === 'emergency';
       const routeColor = ROUTE_COLORS[assignedRouteName] || '#10b981';
       const icon = makeBusIcon(isEmergency, isTracked, isVisible, routeColor);
-      const label = `Bus ID: ${strBusId}`;
+      
+      const tooltipText = `🚌 Bus ID: ${strBusId}${bus.driverName ? ` | 👨‍✈️ Driver: ${bus.driverName}` : ' | 👨‍✈️ Unknown Driver'}`;
       
       if (!isVisible) {
         if (markersRef.current[strBusId]) {
@@ -157,9 +198,10 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
         if (markersRef.current[strBusId]) {
           markersRef.current[strBusId].setLatLng([parseFloat(bus.lat), parseFloat(bus.lng)]);
           markersRef.current[strBusId].setIcon(icon);
+          markersRef.current[strBusId].setTooltipContent(tooltipText);
         } else {
           const marker = L.marker([parseFloat(bus.lat), parseFloat(bus.lng)], { icon })
-            .bindTooltip(`🚌 ${label}${bus.driverName ? ` · ${bus.driverName}` : ''}`, {
+            .bindTooltip(tooltipText, {
               permanent: false, direction: 'top', offset: [0, -10],
             })
             .addTo(mapInstance.current);
@@ -184,13 +226,13 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
 
         if (!pathsRef.current[strBusId]) {
            const poly = L.polyline(assignedPathCoords, polylineOptions)
-           .bindTooltip(`${label} (${assignedRouteName})`, { sticky: true, className: 'path-tooltip' })
+           .bindTooltip(tooltipText, { sticky: true, className: 'path-tooltip' })
            .addTo(mapInstance.current);
            pathsRef.current[strBusId] = poly;
         } else {
            pathsRef.current[strBusId].setLatLngs(assignedPathCoords);
            pathsRef.current[strBusId].setStyle(polylineOptions);
-           pathsRef.current[strBusId].setTooltipContent(`${label} (${assignedRouteName})`);
+           pathsRef.current[strBusId].setTooltipContent(tooltipText);
         }
       }
     });
