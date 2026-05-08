@@ -48,9 +48,9 @@ const ROUTE_PATHS = {
 };
 
 const ROUTE_COLORS = {
-  'Route 10A': '#3b82f6',
-  'Route 15': '#8b5cf6',
-  'University Express': '#f59e0b'
+  'Route 10A': '#3b82f6', // الأزرق
+  'Route 15': '#8b5cf6', // البنفسجي
+  'University Express': '#f59e0b', // البرتقالي
 };
 
 export default function LiveMap({ buses = [], height = '430px', trackedBusId = null, activeRoute = null }) {
@@ -58,6 +58,10 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const pathsRef = useRef({});
+  
+  // حفظ آخر باص أو خط تم تتبعه لمنع إعادة التكبير التلقائي المزعج
+  const lastTrackedRef = useRef(null);
+  const lastActiveRouteRef = useRef(null);
 
   useEffect(() => {
     if (mapInstance.current) return;
@@ -76,37 +80,70 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
   useEffect(() => {
     if (!mapInstance.current) return;
     
-    // Zoom logic
-    if (trackedBusId) {
-      const bus = buses.find(b => b.busId === trackedBusId || b.plateNumber === trackedBusId);
-      if (bus && bus.lat) {
+    // ==========================================
+    // 1. نظام الـ Zoom والـ Focus الذكي
+    // ==========================================
+    if (trackedBusId && trackedBusId !== lastTrackedRef.current) {
+      const bus = buses.find(b => String(b.busId) === String(trackedBusId) || b.plateNumber === trackedBusId);
+      if (bus && bus.lat && bus.lng) {
         mapInstance.current.setView([bus.lat, bus.lng], 16, { animate: true, duration: 1.5 });
+        lastTrackedRef.current = trackedBusId; // تحديث فقط عند النجاح
       }
-    } else {
+    } else if (!trackedBusId) {
+      lastTrackedRef.current = null;
+    }
+
+    if (activeRoute && activeRoute !== lastActiveRouteRef.current) {
+      const routeBuses = buses.filter(b => {
+         const rName = b.routeId || (String(b.busId).includes('1') ? 'Route 10A' : 'University Express');
+         return rName === activeRoute;
+      });
+      const validCoords = routeBuses.filter(b => b.lat && b.lng).map(b => [b.lat, b.lng]);
+      if (validCoords.length > 0) {
+          const bounds = L.latLngBounds(validCoords);
+          if (ROUTE_PATHS[activeRoute]) {
+              ROUTE_PATHS[activeRoute].forEach(coord => bounds.extend(coord));
+          }
+          mapInstance.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: true });
+          lastActiveRouteRef.current = activeRoute; // تحديث فقط عند النجاح
+      }
+    } else if (!activeRoute) {
+      lastActiveRouteRef.current = null;
+    }
+
+    // Return to default ONLY if both are cleared
+    if (!trackedBusId && !activeRoute && (lastTrackedRef.current || lastActiveRouteRef.current)) {
       mapInstance.current.setView([31.9539, 35.9106], 12, { animate: true });
     }
 
     const currentBusIds = new Set(buses.map(b => String(b.busId)));
 
+    // Ensure we don't hide everything if a tracked bus isn't found yet
+    const hasTrackedBusInList = trackedBusId ? buses.some(b => String(b.busId) === String(trackedBusId) || b.plateNumber === trackedBusId) : false;
+
     buses.forEach((bus) => {
       const strBusId = String(bus.busId);
-      // Visibility Filtering
       const assignedRouteName = bus.routeId || (strBusId.includes('1') ? 'Route 10A' : 'University Express');
+      const isTracked = trackedBusId && (strBusId === trackedBusId || bus.plateNumber === trackedBusId);
+      
       let isVisible = true;
-      if (activeRoute) {
-        if (assignedRouteName !== activeRoute) isVisible = false;
+      
+      // التتبع له الأولوية القصوى
+      if (trackedBusId && hasTrackedBusInList) {
+          if (!isTracked) isVisible = false;
+      } else if (activeRoute) {
+          if (assignedRouteName !== activeRoute) isVisible = false;
       }
-      if (trackedBusId) {
-        if (strBusId !== trackedBusId && bus.plateNumber !== trackedBusId) isVisible = false;
+
+      if (!bus.lat || !bus.lng || isNaN(parseFloat(bus.lat)) || isNaN(parseFloat(bus.lng))) {
+          isVisible = false;
       }
 
       const isEmergency = bus.status === 'fault' || bus.status === 'emergency';
-      const isTracked = trackedBusId && (strBusId === trackedBusId || bus.plateNumber === trackedBusId);
       const routeColor = ROUTE_COLORS[assignedRouteName] || '#10b981';
       const icon = makeBusIcon(isEmergency, isTracked, isVisible, routeColor);
       const label = `Bus ID: ${strBusId}`;
       
-      // Marker handling
       if (!isVisible) {
         if (markersRef.current[strBusId]) {
            markersRef.current[strBusId].remove();
@@ -118,10 +155,10 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
         }
       } else {
         if (markersRef.current[strBusId]) {
-          markersRef.current[strBusId].setLatLng([bus.lat, bus.lng]);
+          markersRef.current[strBusId].setLatLng([parseFloat(bus.lat), parseFloat(bus.lng)]);
           markersRef.current[strBusId].setIcon(icon);
         } else {
-          const marker = L.marker([bus.lat, bus.lng], { icon })
+          const marker = L.marker([parseFloat(bus.lat), parseFloat(bus.lng)], { icon })
             .bindTooltip(`🚌 ${label}${bus.driverName ? ` · ${bus.driverName}` : ''}`, {
               permanent: false, direction: 'top', offset: [0, -10],
             })
@@ -129,33 +166,30 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
           markersRef.current[strBusId] = marker;
         }
 
-        // Generate a deterministic mock path for the bus based on its ID
+        const historyPath = ROUTE_PATHS[assignedRouteName] || ROUTE_PATHS['Route 10A'];
         const numId = parseInt(strBusId.replace(/\D/g, '')) || 100;
-        const offset1 = (numId % 10) * 0.0015;
-        const offset2 = (numId % 20) * 0.0015;
+        const offset = (numId % 5) * 0.0001;
         
-        const assignedPathCoords = [
-          [bus.lat - 0.005 - offset1, bus.lng - 0.005 + offset2],
-          [bus.lat - 0.002 - offset1/2, bus.lng - 0.001 + offset2/2],
-          [bus.lat, bus.lng]
-        ];
+        const assignedPathCoords = historyPath.map(coord => [coord[0] + offset, coord[1] + offset]);
+        if (bus.lat && bus.lng) {
+            assignedPathCoords.push([parseFloat(bus.lat), parseFloat(bus.lng)]);
+        }
+
+        const polylineOptions = {
+          color: routeColor, 
+          weight: isTracked ? 6 : 4, 
+          opacity: isTracked ? 1.0 : 0.8,
+          dashArray: isTracked ? '10, 10' : null 
+        };
 
         if (!pathsRef.current[strBusId]) {
-           const poly = L.polyline(assignedPathCoords, { 
-              color: routeColor, 
-              weight: isTracked ? 5 : 3, 
-              opacity: isTracked ? 1.0 : 0.8 
-           })
+           const poly = L.polyline(assignedPathCoords, polylineOptions)
            .bindTooltip(`${label} (${assignedRouteName})`, { sticky: true, className: 'path-tooltip' })
            .addTo(mapInstance.current);
            pathsRef.current[strBusId] = poly;
         } else {
            pathsRef.current[strBusId].setLatLngs(assignedPathCoords);
-           pathsRef.current[strBusId].setStyle({
-              color: routeColor, 
-              weight: isTracked ? 5 : 3, 
-              opacity: isTracked ? 1.0 : 0.8 
-           });
+           pathsRef.current[strBusId].setStyle(polylineOptions);
            pathsRef.current[strBusId].setTooltipContent(`${label} (${assignedRouteName})`);
         }
       }
