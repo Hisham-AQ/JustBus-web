@@ -1,12 +1,26 @@
 import axios from 'axios';
 
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
 });
 
+// 👇 FORCE header at creation time
+api.defaults.headers.common['Authorization'] =
+  `Bearer ${localStorage.getItem('unifleet_token') || ''}`;
+
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('unifleet_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  console.log("TOKEN USED:", token); // DEBUG
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("NO TOKEN FOUND");
+  }
+
   return config;
 });
 
@@ -40,11 +54,15 @@ export const blacklistManualStudent = (data) => api.post('/students/blacklist-ma
 export const liftBlacklist      = (id) => api.delete(`/students/${id}/blacklist`);
 export const deleteStudent       = (id) => api.delete(`/students/${id}`);
 
-// Trips
-export const getTrips           = () => api.get('/trips');
-export const createTrip         = (data) => api.post('/trips', data);
-export const updateTrip         = (id, data) => api.put(`/trips/${id}`, data);
-export const deleteTrip         = (id) => api.delete(`/trips/${id}`);
+
+// Trips (use main api instead of API)
+export const getTrips = () => api.get('/admin/trips');
+export const createTrip = (data) => api.post('/admin/trips', data);
+export const updateTrip = (id, data) => api.put(`/admin/trips/${id}`, data);
+export const deleteTrip = (id) => api.delete(`/admin/trips/${id}`);
+
+// Stations
+export const getStations = () => api.get('/stations');
 
 // Parcels
 export const getParcels         = () => api.get('/parcels');

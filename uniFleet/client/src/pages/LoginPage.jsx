@@ -11,22 +11,29 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { setToken } = useAuth();
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const res = await login(email, password);
-      localStorage.setItem('unifleet_token', res.data.token);
-      localStorage.setItem('unifleet_admin', JSON.stringify(res.data.admin));
-      setToken(res.data.token);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
+ async function handleSubmit(e) {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+
+  try {
+    const res = await login(email, password);
+
+    // ✅ store token
+    localStorage.setItem('unifleet_token', res.data.token);
+
+    // ✅ store role (optional but useful)
+    localStorage.setItem('unifleet_role', res.data.role);
+
+    setToken(res.data.token);
+
+    navigate('/');
+  } catch (err) {
+    setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div style={{

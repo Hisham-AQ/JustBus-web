@@ -1,17 +1,30 @@
 
 import React, { useState, useEffect } from 'react';
 import Pill from '../components/Pill';
-import StopList from '../components/StopList';
-import { getRoutes, createRoute, updateRoute, deleteRoute } from '../services/api';
+import {
+  getTrips,
+  createTrip,
+  updateTrip,
+  deleteTrip,
+  getStations
+} from '../services/api';
 
-const STATUS_OPTIONS = ['active', 'en-route', 'pending', 'inactive'];
+const STATUS_OPTIONS = ['scheduled','ongoing','completed','cancelled'];
 
 const emptyForm = {
-  name: '',
-  startStop: '',
-  endStop: '',
-  status: 'active',
-  stops: [],
+  fromCity: '',
+  toCity: '',
+
+  pickupStations: [],
+  dropoffStations: [],
+
+  departureTime: '',
+  arrivalTime: '',
+  durationMinutes: '',
+
+  tripDate: '',
+  price: '',
+  status: 'scheduled'
 };
 
 function Modal({ title, onClose, children }) {
@@ -25,6 +38,9 @@ function Modal({ title, onClose, children }) {
         background: 'var(--surface)', border: '1px solid var(--border)',
         borderRadius: '16px', padding: '32px', width: '550px', maxWidth: '95vw',
         boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+        maxHeight: '90vh',
+overflowY: 'auto',
+paddingRight: '8px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '1rem' }}>{title}</h3>
@@ -70,20 +86,86 @@ export default function RoutesPage() {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [search, setSearch] = useState('');
+  const [stations, setStations] = useState([]);
 
-  useEffect(() => { loadData(); }, []);
+useEffect(() => {
+  loadData();
+  loadStations();
+}, []);
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const res = await getRoutes();
-      setRoutes(res.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+async function loadStations() {
+  try {
+    const res = await getStations();
+    setStations(res.data || []);
+  } catch (err) {
+    console.error("LOAD STATIONS ERROR:", err);
   }
+}
+
+ async function loadData() {
+  setLoading(true);
+  try {
+    const res = await getTrips();
+
+    const data = Array.isArray(res.data) ? res.data : [];
+
+    const mapped = data.map(trip => ({
+      fromCity: trip.fromCity,
+toCity: trip.toCity,
+
+departureTime: trip.departureTime
+  ? trip.departureTime.slice(0, 5)
+  : '',
+
+arrivalTime: trip.arrivalTime
+  ? trip.arrivalTime.slice(0, 5)
+  : '',
+
+tripDate: trip.tripDate
+  ? String(trip.tripDate).split('T')[0]
+  : '',
+
+price: trip.price,
+      id: trip.id,
+      name: `${trip.fromCity} → ${trip.toCity}`,
+      startStop:
+  Array.isArray(trip.pickupLocation)
+    ? trip.pickupLocation
+        .map(stop =>
+          typeof stop === "object"
+            ? stop.name
+            : stop
+        )
+        .join(", ")
+    : "N/A",
+
+    
+durationMinutes: trip.durationMinutes,
+
+endStop:
+  Array.isArray(trip.dropoffLocation)
+    ? trip.dropoffLocation
+        .map(stop =>
+          typeof stop === "object"
+            ? stop.name
+            : stop
+        )
+        .join(", ")
+    : "N/A",
+
+      status: trip.status || "scheduled",
+      stops: [],
+      busCount: 0
+    }));
+
+    setRoutes(mapped);
+  } catch (e) {
+    console.error(e);
+    setRoutes([]);
+  } finally {
+    setLoading(false);
+  }
+}
 
   function openAdd() {
     setEditing(null);
@@ -93,53 +175,108 @@ export default function RoutesPage() {
   }
 
   function openEdit(route) {
-    setEditing(route);
-    setForm({
-      name: route.name,
-      startStop: route.startStop,
-      endStop: route.endStop,
-      status: route.status,
-      stops: route.stops.map(s => ({
-        name: s.name,
-        order: s.order,
-        lat: s.lat,
-        lng: s.lng
-      })),
-    });
-    setErrors({});
-    setShowModal(true);
-  }
+  setEditing(route);
+
+  setForm({
+    fromCity: route.fromCity || '',
+    toCity: route.toCity || '',
+
+    arrivalTime: route.arrivalTime || '',
+durationMinutes: route.durationMinutes || '',
+
+    status: route.status || 'scheduled',
+
+    pickupStations: [],
+    dropoffStations: [],
+
+    departureTime: route.departureTime || '',
+    tripDate: route.tripDate || '',
+    price: route.price || ''
+  });
+
+  setErrors({});
+  setShowModal(true);
+}
 
   function validate() {
-    const e = {};
-    if (!form.name.trim()) e.name = 'Name is required';
-    if (!form.startStop.trim()) e.startStop = 'Start stop is required';
-    if (!form.endStop.trim()) e.endStop = 'End stop is required';
-    return e;
-  }
+  const e = {};
+
+  if (!form.arrivalTime)
+  e.arrivalTime = 'Arrival time required';
+
+if (!form.durationMinutes)
+  e.durationMinutes = 'Trip duration required';
+
+  if (!form.fromCity.trim())
+  e.fromCity = 'From city required';
+
+if (!form.toCity.trim())
+  e.toCity = 'To city required';
+
+  if (form.pickupStations.length === 0)
+    e.startStop = 'Select at least one pickup station';
+
+  if (form.dropoffStations.length === 0)
+    e.endStop = 'Select at least one dropoff station';
+
+  if (!form.departureTime)
+    e.departureTime = 'Departure time required';
+
+  if (!form.tripDate)
+    e.tripDate = 'Trip date required';
+
+  if (!form.price)
+    e.price = 'Price required';
+
+  return e;
+}
 
   async function handleSave() {
-    const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    setSaving(true);
-    try {
-      if (editing) {
-        await updateRoute(editing.id, form);
-      } else {
-        await createRoute(form);
-      }
-      setShowModal(false);
-      await loadData();
-    } catch (err) {
-      setErrors({ general: 'Failed to save. Please check your data.' });
-    } finally {
-      setSaving(false);
-    }
+  const errs = validate();
+  if (Object.keys(errs).length > 0) {
+    setErrors(errs);
+    return;
   }
+
+  setSaving(true);
+
+  try {
+   const payload = {
+fromCity: form.fromCity,
+toCity: form.toCity,
+
+  pickupLocation: form.pickupStations,
+  dropoffLocation: form.dropoffStations,
+
+  status: form.status,
+  departureTime: form.departureTime,
+arrivalTime: form.arrivalTime,
+durationMinutes: form.durationMinutes,
+  price: form.price,
+  availableSeats: 30,
+  tripDate: form.tripDate
+};
+
+    if (editing) {
+      await updateTrip(editing.id, payload);
+    } else {
+      await createTrip(payload);
+    }
+
+  setForm(emptyForm);
+    await loadData();
+  } catch (err) {
+    setErrors({
+  general: err.response?.data?.message || err.message
+});
+  } finally {
+    setSaving(false);
+  }
+}
 
   async function handleDelete(route) {
     try {
-      await deleteRoute(route.id);
+      await deleteTrip(route.id);
       setConfirmDelete(null);
       await loadData();
     } catch (err) {
@@ -149,7 +286,7 @@ export default function RoutesPage() {
 
   const filtered = routes.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase()) ||
-    r.id.toLowerCase().includes(search.toLowerCase())
+    String(r.id).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -168,7 +305,7 @@ export default function RoutesPage() {
       {/* Routes Table */}
       <div className="panel">
         <div className="panel-header">
-          <div className="panel-title">⤷ All Routes</div>
+          <div className="panel-title">⤷ All Trips</div>
           <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{filtered.length} routes active</span>
         </div>
 
@@ -190,7 +327,7 @@ export default function RoutesPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
-                    No routes found.
+                    No trips found.
                   </td>
                 </tr>
               )}
@@ -244,36 +381,109 @@ export default function RoutesPage() {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <Modal title={editing ? `✏️ Edit Route — ${editing.name}` : '+ Add New Route'} onClose={() => setShowModal(false)}>
+        <Modal title={editing ? `✏️ Edit Route — ${editing.name}` : '+ Add New Trip'} onClose={() => setShowModal(false)}>
           {errors.general && <div style={{ color: 'var(--accent3)', fontSize: '0.82rem', marginBottom: '10px' }}>⚠️ {errors.general}</div>}
 
-          <FormField label="Route Name" error={errors.name}>
-            <input
-              style={inputStyle}
-              placeholder="e.g. East Campus Circular"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-            />
-          </FormField>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <FormField label="Start Stop" error={errors.startStop}>
-              <input
-                style={inputStyle}
-                placeholder="Gate 1"
-                value={form.startStop}
-                onChange={e => setForm({ ...form, startStop: e.target.value })}
-              />
-            </FormField>
-            <FormField label="End Stop" error={errors.endStop}>
-              <input
-                style={inputStyle}
-                placeholder="Faculty Block A"
-                value={form.endStop}
-                onChange={e => setForm({ ...form, endStop: e.target.value })}
-              />
-            </FormField>
-          </div>
+
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '14px'
+}}>
+  <FormField
+    label="From City"
+    error={errors.fromCity}
+  >
+    <input
+      value={form.fromCity}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          fromCity: e.target.value
+        })
+      }
+      placeholder="e.g. Amman"
+      className="form-input"
+    />
+  </FormField>
+
+  <FormField
+    label="To City"
+    error={errors.toCity}
+  >
+    <input
+      value={form.toCity}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          toCity: e.target.value
+        })
+      }
+      placeholder="e.g. JUST University"
+      className="form-input"
+    />
+  </FormField>
+</div>
+
+          <FormField label="Departure Time">
+  <input
+    type="time"
+    style={inputStyle}
+    value={form.departureTime}
+    onChange={e => setForm({ ...form, departureTime: e.target.value })}
+  />
+</FormField>
+
+<FormField label="Arrival Time">
+  <input
+    type="time"
+    style={inputStyle}
+    value={form.arrivalTime}
+    onChange={e =>
+      setForm({
+        ...form,
+        arrivalTime: e.target.value
+      })
+    }
+  />
+</FormField>
+
+<FormField label="Trip Duration (Minutes)">
+  <input
+    type="number"
+    style={inputStyle}
+    value={form.durationMinutes}
+    onChange={e =>
+      setForm({
+        ...form,
+        durationMinutes: e.target.value
+      })
+    }
+    placeholder="e.g. 90"
+  />
+</FormField>
+
+<FormField label="Trip Date">
+  <input
+    type="date"
+    style={inputStyle}
+    value={form.tripDate}
+    onChange={e => setForm({ ...form, tripDate: e.target.value })}
+  />
+</FormField>
+
+<FormField label="Price">
+  <input
+    type="number"
+    style={inputStyle}
+    value={form.price}
+    onChange={e => setForm({ ...form, price: e.target.value })}
+  />
+</FormField>
+
+
+          
 
           <FormField label="Status">
             <select
@@ -287,11 +497,103 @@ export default function RoutesPage() {
             </select>
           </FormField>
 
+
+                <FormField label="Pickup Stations">
+  <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px'
+  }}>
+    {stations.map(station => (
+      <label
+        key={station.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '0.85rem'
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={form.pickupStations.includes(station.id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setForm({
+                ...form,
+                pickupStations: [
+                  ...form.pickupStations,
+                  station.id
+                ]
+              });
+            } else {
+              setForm({
+                ...form,
+                pickupStations:
+                  form.pickupStations.filter(
+                    id => id !== station.id
+                  )
+              });
+            }
+          }}
+        />
+        {station.name}
+      </label>
+    ))}
+  </div>
+</FormField>
+
+<FormField label="Dropoff Stations">
+  <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px'
+  }}>
+    {stations.map(station => (
+      <label
+        key={station.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '0.85rem'
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={form.dropoffStations.includes(station.id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setForm({
+                ...form,
+                dropoffStations: [
+                  ...form.dropoffStations,
+                  station.id
+                ]
+              });
+            } else {
+              setForm({
+                ...form,
+                dropoffStations:
+                  form.dropoffStations.filter(
+                    id => id !== station.id
+                  )
+              });
+            }
+          }}
+        />
+        {station.name}
+      </label>
+    ))}
+  </div>
+</FormField>
+
+{/*
           <StopList
             stops={form.stops}
             onChange={(stops) => setForm({ ...form, stops })}
           />
-
+*/}
           <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
             <button
@@ -306,9 +608,11 @@ export default function RoutesPage() {
         </Modal>
       )}
 
+
+
       {/* Delete Confirmation */}
       {confirmDelete && (
-        <Modal title="⚠️ Delete Route" onClose={() => setConfirmDelete(null)}>
+        <Modal title="⚠️ Delete Trip" onClose={() => setConfirmDelete(null)}>
           <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
             Are you sure you want to delete <strong style={{ color: 'var(--text)' }}>{confirmDelete.name}</strong>?
             This will also remove all intermediate stop data.
