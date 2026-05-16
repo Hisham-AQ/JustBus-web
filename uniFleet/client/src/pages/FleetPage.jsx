@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Pill from '../components/Pill';
-import { getBuses, createBus, updateBus, deleteBus, getRoutes } from '../services/api';
+import { getBuses, createBus, updateBus, deleteBus } from '../services/api';
 
 const CONDITION_OPTIONS = ['good', 'service due', 'fault', 'offline'];
 
 const emptyForm = {
-  plateNumber: '', model: '', capacity: '', condition: 'good', routeId: '',
+  plateNumber: '',
+  model: '',
+  capacity: '',
+  condition: 'good',
 };
 
 function Modal({ title, onClose, children }) {
@@ -56,7 +59,6 @@ const inputStyle = {
 
 export default function FleetPage() {
   const [buses, setBuses] = useState([]);
-  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null); // bus object or null
@@ -74,9 +76,8 @@ export default function FleetPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [busRes, routeRes] = await Promise.all([getBuses(), getRoutes()]);
-      setBuses(busRes.data);
-      setRoutes(routeRes.data);
+     const busRes = await getBuses();
+setBuses(busRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -98,7 +99,6 @@ export default function FleetPage() {
       model: bus.model,
       capacity: String(bus.capacity),
       condition: bus.condition,
-      routeId: bus.routeId || '',
     });
     setErrors({});
     setShowModal(true);
@@ -123,7 +123,6 @@ export default function FleetPage() {
         model: form.model.trim(),
         capacity: Number(form.capacity),
         condition: form.condition,
-        routeId: form.routeId || null,
       };
       if (editing) {
         await updateBus(editing.id, payload);
@@ -157,14 +156,20 @@ export default function FleetPage() {
   };
 
   const filtered = buses.filter(b => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || b.plateNumber?.toLowerCase().includes(q) ||
-      b.model?.toLowerCase().includes(q) ||
-      b.driver?.name?.toLowerCase().includes(q) ||
-      b.route?.name?.toLowerCase().includes(q);
-    const matchCondition = filterCondition === 'all' || b.condition === filterCondition;
-    return matchSearch && matchCondition;
-  });
+  const q = search.toLowerCase();
+
+  const matchSearch =
+    !q ||
+    b.plateNumber?.toLowerCase().includes(q) ||
+    b.model?.toLowerCase().includes(q) ||
+    b.driverName?.toLowerCase().includes(q);
+
+  const matchCondition =
+    filterCondition === 'all' ||
+    b.condition === filterCondition;
+
+  return matchSearch && matchCondition;
+});
 
   return (
     <div className="content">
@@ -234,7 +239,6 @@ export default function FleetPage() {
                 <th>Model</th>
                 <th>Capacity</th>
                 <th>Driver</th>
-                <th>Route</th>
                 <th>Condition</th>
                 <th>Actions</th>
               </tr>
@@ -242,7 +246,7 @@ export default function FleetPage() {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
                     {search ? 'No buses match your search.' : 'No buses added yet. Click "+ Add Bus" to get started.'}
                   </td>
                 </tr>
@@ -252,7 +256,7 @@ export default function FleetPage() {
                 return (
                   <tr key={bus.id}>
                     <td style={{ color: condColor, fontFamily: 'Syne, sans-serif', fontWeight: 700 }}>
-                      #{String(i + 1).padStart(2, '0')}
+                      #{bus.id}
                     </td>
                     <td style={{ fontWeight: 600, color: 'var(--text)' }}>{bus.plateNumber}</td>
                     <td style={{ color: 'var(--muted)' }}>{bus.model}</td>
@@ -264,25 +268,39 @@ export default function FleetPage() {
                         {bus.capacity} seats
                       </span>
                     </td>
-                    <td>
-                      {bus.driver ? (
-                        <div className="driver-cell">
-                          <div className="mini-avatar" style={{ background: 'rgba(129,140,248,.15)', color: 'var(--accent2)' }}>
-                            {bus.driver.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                          </div>
-                          {bus.driver.name}
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--muted)', fontSize: '0.78rem', fontStyle: 'italic' }}>Unassigned</span>
-                      )}
-                    </td>
-                    <td>
-                      {bus.route ? (
-                        <span style={{ color: 'var(--accent)', fontSize: '0.82rem' }}>{bus.route.name}</span>
-                      ) : (
-                        <span style={{ color: 'var(--muted)', fontSize: '0.78rem', fontStyle: 'italic' }}>No route</span>
-                      )}
-                    </td>
+                   <td>
+  {bus.driverName ? (
+    <div className="driver-cell">
+      <div
+        className="mini-avatar"
+        style={{
+          background: 'rgba(129,140,248,.15)',
+          color: 'var(--accent2)'
+        }}
+      >
+        {bus.driverName
+          ?.split(' ')
+          .map(w => w[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()}
+      </div>
+
+      {bus.driverName}
+    </div>
+  ) : (
+    <span
+      style={{
+        color: 'var(--muted)',
+        fontSize: '0.78rem',
+        fontStyle: 'italic'
+      }}
+    >
+      Unassigned
+    </span>
+  )}
+</td>
+
                     <td>
                       <Pill status={bus.condition === 'good' ? 'active' : bus.condition === 'fault' ? 'inactive' : bus.condition === 'service due' ? 'pending' : 'inactive'} />
                     </td>
@@ -379,19 +397,6 @@ export default function FleetPage() {
             </FormField>
           </div>
 
-          <FormField label="Assign to Route (optional)">
-            <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={form.routeId}
-              onChange={e => setForm(f => ({ ...f, routeId: e.target.value }))}
-            >
-              <option value="">— No Route —</option>
-              {routes.map(r => (
-                <option key={r.id} value={r.id}>{r.name} ({r.startStop} → {r.endStop})</option>
-              ))}
-            </select>
-          </FormField>
-
           <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
               Cancel
@@ -416,13 +421,13 @@ export default function FleetPage() {
             Are you sure you want to remove <strong style={{ color: 'var(--text)' }}>{confirmDelete.plateNumber}</strong> ({confirmDelete.model}) from the fleet?
             This action cannot be undone.
           </p>
-          {confirmDelete.driver && (
+          {confirmDelete.driverName && (
             <div style={{
               background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.2)',
               borderRadius: '8px', padding: '10px 14px', color: 'var(--warn)',
               fontSize: '0.82rem', marginBottom: '16px',
             }}>
-              ⚠️ This bus is currently assigned to driver <strong>{confirmDelete.driver.name}</strong>. Deleting will unassign them.
+              ⚠️ This bus is currently assigned to driver <strong>{confirmDelete.driverName}</strong>. Deleting will unassign them.
             </div>
           )}
           <div style={{ display: 'flex', gap: '10px' }}>

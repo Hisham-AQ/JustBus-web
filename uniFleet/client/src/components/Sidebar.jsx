@@ -7,14 +7,15 @@ const navItems = [
     { to: '/map', icon: '🗺', label: 'Live Bus Map' },
   ]},
   { section: 'Fleet & Routes', items: [
-    { to: '/routes', icon: '⤷', label: 'Route & Stop Mgmt' },
-    { to: '/fleet', icon: '🚌', label: 'Bus Fleet' },
-    { to: '/drivers', icon: '👤', label: 'Driver Management' },
-  ]},
-  { section: 'Operations', items: [
-    { to: '/trips', icon: '📅', label: 'Special Trips' },
-    { to: '/parcels', icon: '📦', label: 'Parcel Console', badge: '4' },
-  ]},
+  { to: '/trips', icon: '⤷', label: 'Route & Stop Mgmt' },
+  { to: '/fleet', icon: '🚌', label: 'Bus Fleet' },
+  { to: '/drivers', icon: '👤', label: 'Driver Management' },
+]},
+
+{ section: 'Operations', items: [
+  { to: '/special-trips', icon: '📅', label: 'Special Trips' },
+  { to: '/parcels', icon: '📦', label: 'Parcel Console', badge: '4' },
+]},
   { section: 'Students', items: [
     { to: '/blacklist', icon: '🚫', label: 'Blacklist System' },
     { to: '/rewards', icon: '⭐', label: 'Rewards Config' },

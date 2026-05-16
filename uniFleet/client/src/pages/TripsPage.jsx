@@ -1,17 +1,35 @@
 
 import React, { useState, useEffect } from 'react';
 import Pill from '../components/Pill';
-import { getTrips, getRoutes, getBuses, createTrip, updateTrip, deleteTrip } from '../services/api';
+import {
+  getTrips,
+  createTrip,
+  updateTrip,
+  deleteTrip,
+  getStations,
+  getDrivers,
+  getBuses
+} from '../services/api';
 
-const STATUS_OPTIONS = ['confirmed', 'pending approval', 'canceled'];
+const STATUS_OPTIONS = ['scheduled','ongoing','completed','cancelled'];
+
 
 const emptyForm = {
-  routeNameString: '',
-  busNumberString: '',
-  dateTime: '',
-  price: 0,
-  seats: 50,
-  status: 'pending approval',
+  fromCity: '',
+  toCity: '',
+
+  pickupStations: [],
+  dropoffStations: [],
+
+  departureTime: '',
+  arrivalTime: '',
+  durationMinutes: '',
+
+  tripDate: '',
+  price: '',
+status: 'scheduled',
+
+driverId: '',
 };
 
 function Modal({ title, onClose, children }) {
@@ -23,8 +41,11 @@ function Modal({ title, onClose, children }) {
     }}>
       <div style={{
         background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: '16px', padding: '32px', width: '500px', maxWidth: '95vw',
+        borderRadius: '16px', padding: '32px', width: '550px', maxWidth: '95vw',
         boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+        maxHeight: '90vh',
+overflowY: 'auto',
+paddingRight: '8px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '1rem' }}>{title}</h3>
@@ -60,10 +81,8 @@ const inputStyle = {
   transition: 'border-color 0.2s',
 };
 
-export default function TripsPage() {
-  const [trips, setTrips] = useState([]);
+export default function RoutesPage() {
   const [routes, setRoutes] = useState([]);
-  const [buses, setBuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -71,22 +90,114 @@ export default function TripsPage() {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState('');
+  const [stations, setStations] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+const [buses, setBuses] = useState([]);
 
-  useEffect(() => { loadData(); }, []);
+useEffect(() => {
+  loadData();
+  loadStations();
+  loadDrivers();
+  loadBuses();
+}, []);
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const [tripsRes, routesRes, busesRes] = await Promise.all([getTrips(), getRoutes(), getBuses()]);
-      setTrips(tripsRes.data);
-      setRoutes(routesRes.data);
-      setBuses(busesRes.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+async function loadStations() {
+  try {
+    const res = await getStations();
+    setStations(res.data || []);
+  } catch (err) {
+    console.error("LOAD STATIONS ERROR:", err);
   }
+}
+
+async function loadDrivers() {
+  try {
+    const res = await getDrivers();
+    setDrivers(res.data || []);
+  } catch (err) {
+    console.error("LOAD DRIVERS ERROR:", err);
+  }
+}
+
+async function loadBuses() {
+  try {
+    const res = await getBuses();
+    setBuses(res.data || []);
+  } catch (err) {
+    console.error("LOAD BUSES ERROR:", err);
+  }
+}
+
+ async function loadData() {
+  setLoading(true);
+  try {
+    const res = await getTrips();
+
+    const data = Array.isArray(res.data) ? res.data : [];
+
+    const mapped = data.map(trip => ({
+      fromCity: trip.fromCity,
+toCity: trip.toCity,
+
+driverId: trip.driverId,
+busId: trip.busId,
+driverName: trip.driverName,
+busPlate: trip.busPlate,
+
+departureTime: trip.departureTime
+  ? trip.departureTime.slice(0, 5)
+  : '',
+
+arrivalTime: trip.arrivalTime
+  ? trip.arrivalTime.slice(0, 5)
+  : '',
+
+tripDate: trip.tripDate
+  ? String(trip.tripDate).split('T')[0]
+  : '',
+
+price: trip.price,
+      id: trip.id,
+      name: `${trip.fromCity} → ${trip.toCity}`,
+      startStop:
+  Array.isArray(trip.pickupLocation)
+    ? trip.pickupLocation
+        .map(stop =>
+          typeof stop === "object"
+            ? stop.name
+            : stop
+        )
+        .join(", ")
+    : "N/A",
+
+    
+durationMinutes: trip.durationMinutes,
+
+endStop:
+  Array.isArray(trip.dropoffLocation)
+    ? trip.dropoffLocation
+        .map(stop =>
+          typeof stop === "object"
+            ? stop.name
+            : stop
+        )
+        .join(", ")
+    : "N/A",
+
+      status: trip.status || "scheduled",
+      stops: [],
+      busCount: 0
+    }));
+
+    setRoutes(mapped);
+  } catch (e) {
+    console.error(e);
+    setRoutes([]);
+  } finally {
+    setLoading(false);
+  }
+}
 
   function openAdd() {
     setEditing(null);
@@ -95,52 +206,113 @@ export default function TripsPage() {
     setShowModal(true);
   }
 
-  function openEdit(trip) {
-    setEditing(trip);
-    setForm({
-      routeNameString: trip.routeNameString || '',
-      busNumberString: trip.busNumberString || '',
-      dateTime: trip.dateTime ? trip.dateTime.split('.')[0] : '', // Format for datetime-local
-      price: trip.price || 0,
-      seats: trip.seats || 50,
-      status: trip.status || 'pending approval',
-    });
-    setErrors({});
-    setShowModal(true);
-  }
+  function openEdit(route) {
+  setEditing(route);
+
+  setForm({
+    fromCity: route.fromCity || '',
+    toCity: route.toCity || '',
+
+    driverId: route.driverId || '',
+
+    arrivalTime: route.arrivalTime || '',
+durationMinutes: route.durationMinutes || '',
+
+    status: route.status || 'scheduled',
+
+    pickupStations: [],
+    dropoffStations: [],
+
+    departureTime: route.departureTime || '',
+    tripDate: route.tripDate || '',
+    price: route.price || ''
+  });
+
+  setErrors({});
+  setShowModal(true);
+}
 
   function validate() {
-    const e = {};
-    if (!form.routeNameString) e.routeNameString = 'Route is required';
-    if (!form.dateTime) e.dateTime = 'Date & Time is required';
-    if (form.price < 0) e.price = 'Price cannot be negative';
-    if (form.seats <= 0) e.seats = 'Seats must be greater than 0';
-    return e;
-  }
+  const e = {};
+
+  if (!form.arrivalTime)
+  e.arrivalTime = 'Arrival time required';
+
+if (!form.durationMinutes)
+  e.durationMinutes = 'Trip duration required';
+
+  if (!form.fromCity.trim())
+  e.fromCity = 'From city required';
+
+if (!form.toCity.trim())
+  e.toCity = 'To city required';
+
+  if (form.pickupStations.length === 0)
+    e.startStop = 'Select at least one pickup station';
+
+  if (form.dropoffStations.length === 0)
+    e.endStop = 'Select at least one dropoff station';
+
+  if (!form.departureTime)
+    e.departureTime = 'Departure time required';
+
+  if (!form.tripDate)
+    e.tripDate = 'Trip date required';
+
+  if (!form.price)
+    e.price = 'Price required';
+
+  return e;
+}
 
   async function handleSave() {
-    const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    setSaving(true);
-    try {
-      const payload = { ...form, dateTime: new Date(form.dateTime).toISOString() };
-      if (editing) {
-        await updateTrip(editing.id, payload);
-      } else {
-        await createTrip(payload);
-      }
-      setShowModal(false);
-      await loadData();
-    } catch (err) {
-      setErrors({ general: 'Failed to save. Please check your data.' });
-    } finally {
-      setSaving(false);
-    }
+  const errs = validate();
+  if (Object.keys(errs).length > 0) {
+    setErrors(errs);
+    return;
   }
 
-  async function handleDelete(trip) {
+  setSaving(true);
+
+  try {
+   const payload = {
+fromCity: form.fromCity,
+toCity: form.toCity,
+
+driverId: form.driverId || null,
+
+  pickupLocation: form.pickupStations,
+  dropoffLocation: form.dropoffStations,
+
+  status: form.status,
+  departureTime: form.departureTime,
+arrivalTime: form.arrivalTime,
+durationMinutes: form.durationMinutes,
+  price: form.price,
+  availableSeats: 30,
+  tripDate: form.tripDate
+};
+
+    if (editing) {
+      await updateTrip(editing.id, payload);
+    } else {
+      await createTrip(payload);
+    }
+
+  setForm(emptyForm);
+    await loadData();
+  } catch (err) {
+    setErrors({
+  general: err.response?.data?.message || err.message
+});
+  } finally {
+    setSaving(false);
+  }
+}
+
+  async function handleDelete(route) {
     try {
-      await deleteTrip(trip.id);
+      await deleteTrip(route.id);
       setConfirmDelete(null);
       await loadData();
     } catch (err) {
@@ -148,97 +320,105 @@ export default function TripsPage() {
     }
   }
 
-  const exportSchedule = () => {
-    if (trips.length === 0) return;
-    
-    // CSV Header
-    const headers = ["TRIP ID", "DATE & TIME", "BUS", "SEATS", "PRICE", "STATUS"];
-    const rows = trips.map((trip, idx) => [
-      `ST#${idx + 1}`,
-      new Date(trip.dateTime).toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-      trip.busNumberString || (trip.bus ? trip.bus.plateNumber : 'N/A'),
-      `${trip.booked}/${trip.seats}`,
-      `${trip.price} JD`,
-      trip.status
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `special_trip_schedule_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+  const filtered = routes.filter(r =>
+    r.name.toLowerCase().includes(search.toLowerCase()) ||
+    String(r.id).toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="content">
-
-
-      <div className="toolbar" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-        <button className="btn btn-primary" onClick={openAdd} style={{ padding: '10px 20px', borderRadius: '8px' }}>+ Schedule Trip</button>
-        <button className="btn btn-ghost" onClick={exportSchedule} style={{ padding: '10px 20px', borderRadius: '8px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>Export Schedule</button>
+      {/* Toolbar */}
+      <div className="toolbar">
+        <button className="btn btn-primary" onClick={openAdd}>+ New Trip</button>
+        <input
+          placeholder="🔍 Search routes by name or ID..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ ...inputStyle, width: '300px', marginLeft: 'auto' }}
+        />
       </div>
 
+      {/* Routes Table */}
       <div className="panel">
-        <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', padding: '20px' }}>
-          <span role="img" aria-label="calendar" style={{ fontSize: '1.2rem' }}>🗓️</span>
-          <div className="panel-title" style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Special Trip Schedule</div>
+        <div className="panel-header">
+          <div className="panel-title">⤷ All Trips</div>
+          <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{filtered.length} routes active</span>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>⏳ Loading trips...</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>⏳ Loading routes...</div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Trip ID</th>
-                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Date & Time</th>
-                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Bus</th>
-                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Seats</th>
-                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Price</th>
-                <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Status</th>
-                <th style={{ textAlign: 'center', padding: '12px 20px', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Actions</th>
+                <th>Route ID</th>
+                <th>Name</th>
+                <th>Stops</th>
+                <th>Buses</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {trips.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
-                    No special trips scheduled.
+                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
+                    No trips found.
                   </td>
                 </tr>
               )}
-              {trips.map((trip, idx) => (
-                <tr key={trip.id} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ color: 'var(--accent)', fontFamily: 'Syne, sans-serif', fontSize: '0.85rem', padding: '16px 20px' }}>
-                    ST#{idx + 1}
+              {filtered.map(route => (
+                <tr key={route.id}>
+                  <td style={{ color: 'var(--accent)', fontFamily: 'Syne, sans-serif', fontSize: '0.85rem' }}>
+                    {route.id}
                   </td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <div style={{ fontSize: '0.875rem' }}>
-                      {new Date(trip.dateTime).toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  <td>
+                    <div style={{ fontWeight: 500 }}>{route.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{route.startStop} → {route.endStop}
+
+<br />
+
+<span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>
+  Driver: {route.driverName || 'Unassigned'}
+</span>
+
+<br />
+
+<span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>
+  Bus: {route.busPlate || 'Unassigned'}
+</span></div>
+                  </td>
+                  <td>
+                    <span style={{
+                      background: 'rgba(129,140,248,.12)', color: 'var(--accent2)',
+                      padding: '2px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600
+                    }}>
+                      {route.stops?.length || 0} stops
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ color: 'var(--accent4)', fontWeight: 600 }}>
+                      {route._count?.buses || 0} buses
+                    </span>
+                  </td>
+                  <td><Pill status={route.status} /></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                        onClick={() => openEdit(route)}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                        onClick={() => setConfirmDelete(route)}
+                      >
+                        🗑
+                      </button>
                     </div>
-                  </td>
-                  <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
-                    {trip.busNumberString || (trip.bus ? `Bus #${trip.bus.plateNumber}` : <span style={{ color: 'var(--muted)' }}>Unassigned</span>)}
-                  </td>
-                  <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
-                    {trip.booked} / {trip.seats}
-                  </td>
-                  <td style={{ padding: '16px 20px', fontWeight: 600, fontSize: '0.875rem' }}>
-                    {trip.price} JD
-                  </td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <Pill status={trip.status} />
-                  </td>
-                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                    <button className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--surface2)', borderRadius: '6px' }} onClick={() => openEdit(trip)}>Edit</button>
-                    <button className="btn btn-danger" style={{ padding: '6px 12px', fontSize: '0.8rem', marginLeft: '8px' }} onClick={() => setConfirmDelete(trip)}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -247,60 +427,133 @@ export default function TripsPage() {
         )}
       </div>
 
+      {/* Add/Edit Modal */}
       {showModal && (
-        <Modal title={editing ? '✏️ Edit Special Trip' : '+ Create Special Trip'} onClose={() => setShowModal(false)}>
+        <Modal title={editing ? `✏️ Edit Route — ${editing.name}` : '+ Add New Trip'} onClose={() => setShowModal(false)}>
           {errors.general && <div style={{ color: 'var(--accent3)', fontSize: '0.82rem', marginBottom: '10px' }}>⚠️ {errors.general}</div>}
 
-          <FormField label="Assigned Route" error={errors.routeNameString}>
-            <input
-              type="text"
-              placeholder="e.g. North Campus Loop"
-              style={inputStyle}
-              value={form.routeNameString}
-              onChange={e => setForm({ ...form, routeNameString: e.target.value })}
-            />
-          </FormField>
 
-          <FormField label="Departure Date & Time" error={errors.dateTime}>
-            <input
-              type="datetime-local"
-              style={inputStyle}
-              value={form.dateTime}
-              onChange={e => setForm({ ...form, dateTime: e.target.value })}
-            />
-          </FormField>
 
-          <FormField label="Specify Bus" error={errors.busNumberString}>
-            <input
-              type="text"
-              placeholder="e.g. NBT-101"
-              style={inputStyle}
-              value={form.busNumberString}
-              onChange={e => setForm({ ...form, busNumberString: e.target.value })}
-            />
-          </FormField>
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '14px'
+}}>
+  <FormField
+    label="From City"
+    error={errors.fromCity}
+  >
+    <input
+      value={form.fromCity}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          fromCity: e.target.value
+        })
+      }
+      placeholder="e.g. Amman"
+      className="form-input"
+    />
+  </FormField>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <FormField label="Ticket Price (JD)" error={errors.price}>
-              <input
-                type="number"
-                step="0.1"
-                style={inputStyle}
-                value={form.price}
-                onChange={e => setForm({ ...form, price: parseFloat(e.target.value) })}
-              />
-            </FormField>
-            <FormField label="Total Seats" error={errors.seats}>
-              <input
-                type="number"
-                style={inputStyle}
-                value={form.seats}
-                onChange={e => setForm({ ...form, seats: parseInt(e.target.value) })}
-              />
-            </FormField>
-          </div>
+  <FormField
+    label="To City"
+    error={errors.toCity}
+  >
+    <input
+      value={form.toCity}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          toCity: e.target.value
+        })
+      }
+      placeholder="e.g. JUST University"
+      className="form-input"
+    />
+  </FormField>
+</div>
 
-          <FormField label="Booking Status">
+          <FormField label="Departure Time">
+  <input
+    type="time"
+    style={inputStyle}
+    value={form.departureTime}
+    onChange={e => setForm({ ...form, departureTime: e.target.value })}
+  />
+</FormField>
+
+<FormField label="Arrival Time">
+  <input
+    type="time"
+    style={inputStyle}
+    value={form.arrivalTime}
+    onChange={e =>
+      setForm({
+        ...form,
+        arrivalTime: e.target.value
+      })
+    }
+  />
+</FormField>
+
+<FormField label="Trip Duration (Minutes)">
+  <input
+    type="number"
+    style={inputStyle}
+    value={form.durationMinutes}
+    onChange={e =>
+      setForm({
+        ...form,
+        durationMinutes: e.target.value
+      })
+    }
+    placeholder="e.g. 90"
+  />
+</FormField>
+
+<FormField label="Trip Date">
+  <input
+    type="date"
+    style={inputStyle}
+    value={form.tripDate}
+    onChange={e => setForm({ ...form, tripDate: e.target.value })}
+  />
+</FormField>
+
+<FormField label="Price">
+  <input
+    type="number"
+    style={inputStyle}
+    value={form.price}
+    onChange={e => setForm({ ...form, price: e.target.value })}
+  />
+</FormField>
+
+
+          <FormField label="Driver">
+  <select
+    style={{ ...inputStyle, cursor: 'pointer' }}
+    value={form.driverId}
+    onChange={e =>
+      setForm({
+        ...form,
+        driverId: e.target.value
+      })
+    }
+  >
+    <option value="">Select Driver</option>
+
+    {drivers.map(driver => (
+      <option key={driver.id} value={driver.id}>
+        {driver.name}
+      </option>
+    ))}
+  </select>
+</FormField>
+
+
+          <FormField label="Status">
             <select
               style={{ ...inputStyle, cursor: 'pointer' }}
               value={form.status}
@@ -312,6 +565,103 @@ export default function TripsPage() {
             </select>
           </FormField>
 
+
+                <FormField label="Pickup Stations">
+  <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px'
+  }}>
+    {stations.map(station => (
+      <label
+        key={station.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '0.85rem'
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={form.pickupStations.includes(station.id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setForm({
+                ...form,
+                pickupStations: [
+                  ...form.pickupStations,
+                  station.id
+                ]
+              });
+            } else {
+              setForm({
+                ...form,
+                pickupStations:
+                  form.pickupStations.filter(
+                    id => id !== station.id
+                  )
+              });
+            }
+          }}
+        />
+        {station.name}
+      </label>
+    ))}
+  </div>
+</FormField>
+
+<FormField label="Dropoff Stations">
+  <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px'
+  }}>
+    {stations.map(station => (
+      <label
+        key={station.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '0.85rem'
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={form.dropoffStations.includes(station.id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setForm({
+                ...form,
+                dropoffStations: [
+                  ...form.dropoffStations,
+                  station.id
+                ]
+              });
+            } else {
+              setForm({
+                ...form,
+                dropoffStations:
+                  form.dropoffStations.filter(
+                    id => id !== station.id
+                  )
+              });
+            }
+          }}
+        />
+        {station.name}
+      </label>
+    ))}
+  </div>
+</FormField>
+
+{/*
+          <StopList
+            stops={form.stops}
+            onChange={(stops) => setForm({ ...form, stops })}
+          />
+*/}
           <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
             <button
@@ -320,16 +670,20 @@ export default function TripsPage() {
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? '⏳ Saving...' : editing ? '✅ Update Trip' : '+ Create Trip'}
+              {saving ? '⏳ Saving...' : editing ? '✅ Update Trips' : '+ Add Trip'}
             </button>
           </div>
         </Modal>
       )}
 
+
+
+      {/* Delete Confirmation */}
       {confirmDelete && (
         <Modal title="⚠️ Delete Trip" onClose={() => setConfirmDelete(null)}>
           <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
-            Are you sure you want to delete this trip? This action cannot be undone.
+            Are you sure you want to delete <strong style={{ color: 'var(--text)' }}>{confirmDelete.name}</strong>?
+            This will also remove all intermediate stop data.
           </p>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setConfirmDelete(null)}>Cancel</button>

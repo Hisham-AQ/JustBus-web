@@ -6,10 +6,10 @@ import { useAuth } from './hooks/useAuth';
 
 import DashboardPage   from './pages/DashboardPage';
 import LiveMapPage     from './pages/LiveMapPage';
-import RoutesPage      from './pages/RoutesPage';
+import TripsPage       from "./pages/TripsPage";
 import FleetPage       from './pages/FleetPage';
 import DriversPage     from './pages/DriversPage';
-import TripsPage       from './pages/TripsPage';
+import SpecialTripsPage from './pages/SpecialTripsPage';
 import ParcelsPage     from './pages/ParcelsPage';
 import BlacklistPage   from './pages/BlacklistPage';
 import RewardsPage     from './pages/RewardsPage';
@@ -34,19 +34,19 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
+        <Route path="/login"     element={<LoginPage />} />
+        <Route path="/"          element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
         <Route path="/map"       element={<ProtectedLayout><LiveMapPage /></ProtectedLayout>} />
-        <Route path="/routes"    element={<ProtectedLayout><RoutesPage /></ProtectedLayout>} />
+        <Route path="/trips"     element={<ProtectedLayout><TripsPage /> </ProtectedLayout>}/>
         <Route path="/fleet"     element={<ProtectedLayout><FleetPage /></ProtectedLayout>} />
         <Route path="/drivers"   element={<ProtectedLayout><DriversPage /></ProtectedLayout>} />
-        <Route path="/trips"     element={<ProtectedLayout><TripsPage /></ProtectedLayout>} />
+        <Route path="/special-trips"element={<ProtectedLayout><SpecialTripsPage /></ProtectedLayout>}/>       
         <Route path="/parcels"   element={<ProtectedLayout><ParcelsPage /></ProtectedLayout>} />
         <Route path="/blacklist" element={<ProtectedLayout><BlacklistPage /></ProtectedLayout>} />
         <Route path="/rewards"   element={<ProtectedLayout><RewardsPage /></ProtectedLayout>} />
         <Route path="/ratings"   element={<ProtectedLayout><RatingsPage /></ProtectedLayout>} />
         <Route path="/emergency" element={<ProtectedLayout><EmergencyPage /></ProtectedLayout>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

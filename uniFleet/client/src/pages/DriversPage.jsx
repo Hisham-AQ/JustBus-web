@@ -239,7 +239,7 @@ export default function DriversPage() {
                 <th>License</th>
                 <th>Phone</th>
                 <th>Assigned Bus</th>
-                <th>Route</th>
+                <th>Bus Model</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -260,7 +260,7 @@ export default function DriversPage() {
                       <div>
                         <div style={{ fontWeight: 500, fontSize: '0.85rem' }}>{driver.name}</div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '1px' }}>
-                          ID: {driver.id.slice(-6).toUpperCase()}
+                          ID: {driver.id}
                         </div>
                       </div>
                     </div>
@@ -289,7 +289,7 @@ export default function DriversPage() {
                     )}
                   </td>
                   <td style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>
-                    {driver.bus?.route?.name || '—'}
+                    {driver.bus?.model || '—'}
                   </td>
                   <td><Pill status={driver.status} /></td>
                   <td>

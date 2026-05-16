@@ -2,12 +2,8 @@ import axios from 'axios';
 
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
 });
-
-// 👇 FORCE header at creation time
-api.defaults.headers.common['Authorization'] =
-  `Bearer ${localStorage.getItem('unifleet_token') || ''}`;
 
 
 api.interceptors.request.use((config) => {
@@ -61,14 +57,29 @@ export const createTrip = (data) => api.post('/admin/trips', data);
 export const updateTrip = (id, data) => api.put(`/admin/trips/${id}`, data);
 export const deleteTrip = (id) => api.delete(`/admin/trips/${id}`);
 
+//Special trips
+export const getSpecialTrips =
+  () => api.get('/admin/special-trips');
+
+export const createSpecialTrip =
+  (data) => api.post('/admin/special-trips', data);
+
+export const updateSpecialTrip =
+  (id, data) => api.put(`/admin/special-trips/${id}`, data);
+
+export const deleteSpecialTrip =
+  (id) => api.delete(`/admin/special-trips/${id}`);
+
+
 // Stations
 export const getStations = () => api.get('/stations');
 
 // Parcels
-export const getParcels         = () => api.get('/parcels');
-export const createParcel      = (data) => api.post('/parcels', data);
-export const updateParcelStatus = (id, status) => api.patch(`/parcels/${id}/status`, { status });
-export const deleteParcel      = (id) => api.delete(`/parcels/${id}`);
+export const getParcels           = () => api.get('/admin/parcels');
+export const createParcel         = (data) => api.post('/admin/parcels', data);
+export const updateParcelStatus   = (id, status) => api.patch(`/admin/parcels/${id}/status`, { status });
+export const deleteParcel         = (id) => api.delete(`/admin/parcels/${id}`);
+export const verifyParcelDelivery = (id, pin_code) => api.patch(`/admin/parcels/${id}/verify-delivery`,{ pin_code });
 
 // Ratings
 export const getRatingsAnalytics = () => api.get('/ratings/analytics');
