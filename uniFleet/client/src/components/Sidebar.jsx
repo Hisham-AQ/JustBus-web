@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, {
+  useState,
+  useEffect
+} from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { getParcelNotifications }
+from '../services/api';
 
 const navItems = [
   { section: 'Overview', items: [
@@ -7,17 +12,18 @@ const navItems = [
     { to: '/map', icon: '🗺', label: 'Live Bus Map' },
   ]},
   { section: 'Fleet & Routes', items: [
-  { to: '/trips', icon: '⤷', label: 'Route & Stop Mgmt' },
+  { to: '/trips', icon: '⤷', label: 'Trips & Stop Mgmt' },
   { to: '/fleet', icon: '🚌', label: 'Bus Fleet' },
   { to: '/drivers', icon: '👤', label: 'Driver Management' },
 ]},
 
 { section: 'Operations', items: [
   { to: '/special-trips', icon: '📅', label: 'Special Trips' },
-  { to: '/parcels', icon: '📦', label: 'Parcel Console', badge: '4' },
+  { to: '/parcels', icon: '📦', label: 'Parcel Console' },
+  { to: '/trip-bookings', icon: '🎫', label: 'Trip Bookings' },
 ]},
   { section: 'Students', items: [
-    { to: '/blacklist', icon: '🚫', label: 'Blacklist System' },
+    { to: '/blacklist', icon: '🎓', label: 'Student Control' },
     { to: '/rewards', icon: '⭐', label: 'Rewards Config' },
   ]},
   { section: 'Analytics', items: [
@@ -37,6 +43,31 @@ export default function Sidebar() {
   const adminRaw = localStorage.getItem('unifleet_admin');
   const admin = adminRaw ? JSON.parse(adminRaw) : { name: 'Super Admin', role: 'System Administrator' };
   const initials = admin.name?.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || 'SA';
+  const [parcelCount,
+  setParcelCount] =
+  useState(0);
+  useEffect(() => {
+
+  async function loadParcelCount() {
+
+    try {
+
+      const res =
+        await getParcelNotifications();
+
+      setParcelCount(
+        res.data.total
+      );
+
+    } catch (err) {
+
+      console.error(err);
+    }
+  }
+
+  loadParcelCount();
+
+}, []);
 
   return (
     <aside className="sidebar">
@@ -59,7 +90,23 @@ export default function Sidebar() {
             >
               <span className="nav-icon">{item.icon}</span>
               {item.label}
-              {item.badge && <span className="badge">{item.badge}</span>}
+              {item.to === '/parcels'
+  && parcelCount > 0 && (
+
+  <span className="badge">
+    {parcelCount}
+  </span>
+
+)}
+
+{item.badge
+  && item.to !== '/parcels' && (
+
+  <span className="badge">
+    {item.badge}
+  </span>
+
+)}
             </NavLink>
           ))}
         </div>

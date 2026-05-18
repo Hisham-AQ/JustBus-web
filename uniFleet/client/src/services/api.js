@@ -22,6 +22,8 @@ api.interceptors.request.use((config) => {
 
 // Dashboard
 export const getDashboardStats  = () => api.get('/dashboard/stats');
+export const getDriverActivity  = () => api.get('/drivers/activity');
+export const getWeeklyTrips     = () => api.get('/dashboard/weekly-trips');
 
 // Buses
 export const getBuses           = () => api.get('/buses');
@@ -49,6 +51,10 @@ export const blacklistStudent   = (id, data) => api.post(`/students/${id}/blackl
 export const blacklistManualStudent = (data) => api.post('/students/blacklist-manual', data);
 export const liftBlacklist      = (id) => api.delete(`/students/${id}/blacklist`);
 export const deleteStudent       = (id) => api.delete(`/students/${id}`);
+
+// ================= TRIP BOOKINGS =================
+export const getTripBookings = () => api.get('/admin/trip-bookings');
+export const getTripPassengers = (id) => api.get(`/admin/trip-bookings/${id}/passengers`);
 
 
 // Trips (use main api instead of API)
@@ -80,18 +86,33 @@ export const createParcel         = (data) => api.post('/admin/parcels', data);
 export const updateParcelStatus   = (id, status) => api.patch(`/admin/parcels/${id}/status`, { status });
 export const deleteParcel         = (id) => api.delete(`/admin/parcels/${id}`);
 export const verifyParcelDelivery = (id, pin_code) => api.patch(`/admin/parcels/${id}/verify-delivery`,{ pin_code });
+export const getParcelNotifications = () => api.get('/admin/parcels/notifications/count');
 
 // Ratings
-export const getRatingsAnalytics = () => api.get('/ratings/analytics');
-export const getRatingComments   = () => api.get('/ratings/comments');
+export const getRatingsAnalytics = () => api.get('/admin/ratings/analytics');
+export const getRatingComments   = () => api.get('/admin/ratings/comments');
+export const getDriverRatings    = () => api.get('/admin/ratings/drivers');
+export const getDriverReviews    = (id) => api.get(`/admin/ratings/drivers/${id}/reviews`);
 
 // Alerts
 export const getAlerts          = () => api.get('/alerts');
 export const resolveAlert       = (id) => api.patch(`/alerts/${id}/resolve`);
 
-// Rewards
-export const getRewardRules     = () => api.get('/rewards/rules');
-export const updateRewardRules  = (rules) => api.put('/rewards/rules', { rules });
+// ================= REWARDS =================
+export const getRewards = () => api.get('/admin/rewards');
+export const getRewardRules = () => api.get('/admin/rewards/rules');
+export const updateRewardRules = (data) => api.put('/admin/rewards/rules', data);
+export const createReward = (data) => api.post('/admin/rewards', data);
+export const updateReward = (id, data) => api.put(`/admin/rewards/${id}`, data);
+export const deleteReward = (id) => api.delete(`/admin/rewards/${id}`);
+
+
+// ================= ADMIN POINTS =================
+export const addPoints = (data) => api.post('/admin/points/add', data);
+export const removePoints = (data) => api.post('/admin/points/remove', data);
+export const getPointsHistory = (id) => api.get(`/admin/points/history/${id}`);
+
+
 
 // Auth
 export const login              = (email, password) => api.post('/auth/login', { email, password });

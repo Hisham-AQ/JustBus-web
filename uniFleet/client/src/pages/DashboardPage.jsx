@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import StatCard from '../components/StatCard';
 import LiveMap from '../components/LiveMap';
 import Pill from '../components/Pill';
-import { getDashboardStats, getAlerts, getDrivers } from '../services/api';
+import { getDashboardStats, getAlerts, getDriverRatings,getDriverActivity, getWeeklyTrips } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 
 function timeAgo(dateStr) {
@@ -15,40 +15,73 @@ function timeAgo(dateStr) {
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({ buses: 18, routes: 12, students: 342, parcels: 4 });
+  const [stats, setStats] = useState({
+  activeBuses: 0,
+  activeRoutes: 0,
+  studentsOnBoard: 0,
+  pendingParcels: 0
+});
+
   const [alerts, setAlerts] = useState([]);
-  const [drivers, setDrivers] = useState([]);
+
+  const [driverActivity,
+setDriverActivity] =
+useState([]);
   const [busPositions, setBusPositions] = useState([]);
   const [emergencyAlert, setEmergencyAlert] = useState(null);
   const navigate = useNavigate();
+  const [driverRatings,
+setDriverRatings] =
+useState([]);
+
+const [weeklyTripsData,
+setWeeklyTripsData] =
+useState([]);
 
   useEffect(() => {
+    getWeeklyTrips()
+  .then(r =>
+    setWeeklyTripsData(r.data)
+  )
+  .catch(() => {});
+
+    getDriverActivity()
+  .then(r =>
+    setDriverActivity(r.data)
+  )
+  .catch(() => {});
+
+    getDriverRatings()
+  .then(r => {
+
+    const formatted =
+      r.data.map(driver => ({
+
+        name: driver.name,
+
+        rating:
+          Number(
+            driver.avgDriverRating
+          )
+      }));
+
+    setDriverRatings(
+      formatted
+    );
+
+  })
+  .catch(() => {});
+
     getDashboardStats().then(r => setStats(prev => ({...prev, ...r.data}))).catch(() => {});
     getAlerts().then(r => {
       const active = r.data.filter(a => a.status === 'active');
       setAlerts(active.slice(0, 4));
       if (active.length > 0) setEmergencyAlert(active[0]);
     }).catch(() => {});
-    getDrivers().then(r => setDrivers(r.data.slice(0, 5))).catch(() => {});
   }, []);
 
-  const weeklyTripsData = [
-    { name: 'Mon', trips: 35 },
-    { name: 'Tue', trips: 82 },
-    { name: 'Wed', trips: 42 },
-    { name: 'Thu', trips: 78 },
-    { name: 'Fri', trips: 0 },
-    { name: 'Sat', trips: 4 },
-    { name: 'Sun', trips: 76 }
-  ];
 
-  const driverRatingData = [
-    { name: 'Khalid', rating: 4.9 },
-    { name: 'Sami', rating: 4.2 },
-    { name: 'Omar', rating: 4.5 },
-    { name: 'Laith', rating: 4.8 },
-    { name: 'Ahmad', rating: 4.4 }
-  ];
+
 
   useSocket({
     onBusLocation: (data) => {
@@ -83,40 +116,53 @@ export default function DashboardPage() {
            a.studentId?.toLowerCase().includes(q);
   });
 
-  const maleNames = ['Khalid Amin', 'Sami Mohammed', 'Omar Tariq', 'Laith Haddad', 'Ahmad Saleh'];
-  const mockDataArray = [
-    { rating: 4.9, trips: 5, statusOverride: 'en-route', route: 'Route 2A', bus: 'Bus #3' },
-    { rating: 4.2, trips: 3, statusOverride: 'emergency', route: 'Route 3C', bus: 'Bus #7' },
-    { rating: 4.5, trips: 4, statusOverride: 'en-route', route: 'Route 4D', bus: 'Bus #11' },
-    { rating: 4.8, trips: 6, statusOverride: 'active', route: 'Route 1B', bus: 'Bus #14' },
-    { rating: 4.4, trips: 2, statusOverride: 'active', route: 'Route 5A', bus: 'Bus #5' }
-  ];
+const filteredDrivers =
+  driverActivity.filter(d =>
 
-  const baseDriversArray = drivers.length >= 5 ? drivers : [
-    { id: 'd1', name: 'Mock' }, { id: 'd2', name: 'Mock' }, { id: 'd3', name: 'Mock' }, { id: 'd4', name: 'Mock' }, { id: 'd5', name: 'Mock' }
-  ];
+    !q ||
 
-  const enrichedDrivers = baseDriversArray.map((d, i) => {
-    return { ...d, displayName: maleNames[i % 5], sdoc: mockDataArray[i % 5] };
-  });
+    d.name
+      ?.toLowerCase()
+      .includes(q) ||
 
-  const filteredDrivers = enrichedDrivers.filter(d => 
-    !q || 
-    d.displayName.toLowerCase().includes(q) || 
-    d.sdoc.bus.toLowerCase().includes(q) || 
-    d.sdoc.route.toLowerCase().includes(q) ||
-    d.sdoc.statusOverride.toLowerCase().includes(q)
+    d.plate_number
+      ?.toLowerCase()
+      .includes(q)
   );
+
 
   return (
     <div className="content">
 
       {/* Stat Cards */}
       <div className="stats-grid">
-        <StatCard icon="🚌" label="ACTIVE BUSES" value={stats.buses} trend="↑ 3 more than yesterday" />
-        <StatCard icon="⤷" label="ACTIVE ROUTES" value={stats.routes || 12} trend="All systems normal" />
-        <StatCard icon="👥" label="STUDENTS ON BOARD" value={stats.students} trend="↑ 5.2% this week" />
-        <StatCard icon="📦" label="PENDING PARCELS" value={stats.parcels || 4} trend="↑ 2 new since morning" />
+        <StatCard
+  icon="🚌"
+  label="ACTIVE BUSES"
+  value={stats.activeBuses}
+  trend="Live fleet status"
+/>
+
+<StatCard
+  icon="⤷"
+  label="ACTIVE ROUTES"
+  value={stats.activeRoutes}
+  trend="All systems normal"
+/>
+
+<StatCard
+  icon="👥"
+  label="STUDENTS ON BOARD"
+  value={stats.studentsOnBoard}
+  trend="Registered students"
+/>
+
+<StatCard
+  icon="📦"
+  label="PENDING PARCELS"
+  value={stats.pendingParcels}
+  trend="Awaiting processing"
+/>
       </div>
 
       {/* Map + Alerts */}
@@ -198,7 +244,7 @@ export default function DashboardPage() {
           </div>
           <div style={{ height: '220px', width: '100%', marginTop: '10px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={driverRatingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <LineChart data={driverRatings} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted)' }} dy={10} />
                 <YAxis domain={[3.5, 5.0]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted)' }} />
@@ -234,27 +280,32 @@ export default function DashboardPage() {
             {filteredDrivers.map((d, i) => {
               const colors = ['var(--accent)', 'var(--accent4)', 'var(--accent2)', 'var(--warn)', 'var(--accent3)'];
               const bgs = ['rgba(59,130,246,.15)', 'rgba(16,185,129,.12)', 'rgba(129,140,248,.12)', 'rgba(245,158,11,.12)', 'rgba(239,68,68,.12)'];
-              const initials = d.displayName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-              
-              const sdoc = d.sdoc;
-              const renderStatus = d.status === 'fault' || d.status === 'emergency' ? 'emergency' : sdoc.statusOverride;
+              const initials =
+  d.name
+    ?.split(' ')
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+
 
               return (
                 <tr key={d.id}>
                   <td>
                     <div className="driver-cell">
                       <div className="mini-avatar" style={{ background: bgs[i%5], color: colors[i%5] }}>{initials}</div>
-                      {d.displayName}
+                      {d.name}
                     </div>
                   </td>
-                  <td style={{ fontWeight: 500 }}>{sdoc.bus}</td>
-                  <td style={{ color: 'var(--muted)' }}>{sdoc.route}</td>
-                  <td><Pill status={renderStatus} /></td>
+                  <td style={{ fontWeight: 500 }}>{d.plate_number || 'No Bus'}</td>
+                  <td style={{ color: 'var(--muted)' }}>Main Route</td>
+                  <td><Pill status={d.status} /></td>
                   <td style={{ color: 'var(--text)', fontSize: '0.8rem' }}>
                     <span style={{ color: 'var(--warn)', marginRight: '6px', letterSpacing: '2px' }}>★★★★★</span>
-                    {sdoc.rating}
+                    {d.rating || 0}
                   </td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{sdoc.trips}</td>
+                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{d.tripsToday}</td>
                 </tr>
               );
             })}

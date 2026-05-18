@@ -11,10 +11,11 @@ import FleetPage       from './pages/FleetPage';
 import DriversPage     from './pages/DriversPage';
 import SpecialTripsPage from './pages/SpecialTripsPage';
 import ParcelsPage     from './pages/ParcelsPage';
-import BlacklistPage   from './pages/BlacklistPage';
+import BlacklistPage   from './pages/StudentControlPage';
 import RewardsPage     from './pages/RewardsPage';
 import RatingsPage     from './pages/RatingsPage';
 import EmergencyPage   from './pages/EmergencyPage';
+import TripBookingsPage from './pages/TripBookingsPage';
 
 function ProtectedLayout({ children }) {
   const { token } = useAuth();
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/rewards"   element={<ProtectedLayout><RewardsPage /></ProtectedLayout>} />
         <Route path="/ratings"   element={<ProtectedLayout><RatingsPage /></ProtectedLayout>} />
         <Route path="/emergency" element={<ProtectedLayout><EmergencyPage /></ProtectedLayout>} />
+        <Route path="/trip-bookings" element={ <ProtectedLayout><TripBookingsPage /> </ProtectedLayout>} />
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

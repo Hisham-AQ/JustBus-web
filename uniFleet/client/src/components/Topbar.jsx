@@ -10,7 +10,7 @@ const pageTitles = {
   '/drivers': { title: 'Driver Management', sub: 'Assign and monitor drivers' },
   '/trips': { title: 'Special Trips', sub: 'Schedule and manage special trips' },
   '/parcels': { title: 'Parcel Console', sub: 'Track parcels across trips' },
-  '/blacklist': { title: 'Blacklist System', sub: 'Manage student restrictions' },
+  '/blacklist': { title: 'Student Control', sub: 'Manage access, rewards, and student activity' },
   '/rewards': { title: 'Rewards Configuration', sub: 'Configure loyalty point rules' },
   '/ratings': { title: 'Ratings Analytics', sub: 'Driver performance analytics' },
   '/emergency': { title: 'Emergency Console', sub: 'Active alerts and emergency management' },
@@ -18,7 +18,8 @@ const pageTitles = {
 
 export default function Topbar() {
   const location = useLocation();
-  const info = pageTitles[location.pathname] || { title: 'UniFleet', sub: '' };
+  const info = pageTitles[location.pathname] || { title: 'JustBus', sub: '' };
+
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });

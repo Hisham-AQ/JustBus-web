@@ -148,8 +148,30 @@ export default function DriversPage() {
       setShowModal(false);
       await loadData();
     } catch (err) {
-      setErrors({ general: err.response?.data?.message || 'Failed to save. Please try again.' });
-    } finally { setSaving(false); }
+
+  const message =
+    err.response?.data?.message;
+
+  if (
+    message?.includes(
+      'already assigned'
+    )
+  ) {
+
+    setErrors({
+      general:
+        '🚌 This bus is already assigned to another driver'
+    });
+
+  } else {
+
+    setErrors({
+      general:
+        message ||
+        'Failed to save. Please try again.'
+    });
+  }
+} finally { setSaving(false); }
   }
 
   async function handleDelete(driver) {
