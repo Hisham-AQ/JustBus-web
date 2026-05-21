@@ -179,15 +179,32 @@ export default function ParcelsPage() {
                       }} onMouseEnter={e => e.target.style.color = 'var(--accent3)'} onMouseLeave={e => e.target.style.color = 'var(--muted)'}>🗑</button>
                     </div>
                     
-                    <p style={{ fontSize: '0.95rem', marginBottom: '16px', lineHeight: 1.5, color: 'var(--text)' }}>
-                      <>
-                    <strong>Receiver:</strong> {parcel.receiver_name}
-                    <br />
-                    <strong>From:</strong> {parcel.pickup_location}
-                    <br />
-                    <strong>To:</strong> {parcel.dropoff_location}
-                      </>
-                    </p>
+                    <div
+  style={{
+    fontSize: '0.95rem',
+    marginBottom: '16px',
+    lineHeight: 1.7,
+    color: 'var(--text)'
+  }}
+>
+
+  <div>
+    <strong>Sender:</strong> {parcel.userName}
+  </div>
+
+  <div>
+    <strong>Receiver:</strong> {parcel.receiver_name}
+  </div>
+
+  <div>
+    <strong>From:</strong> {parcel.pickup_location}
+  </div>
+
+  <div>
+    <strong>To:</strong> {parcel.dropoff_location}
+  </div>
+
+</div>
                     <div style={{
                     display: 'flex',
                     flexDirection: 'column',

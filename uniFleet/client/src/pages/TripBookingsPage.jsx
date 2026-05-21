@@ -24,13 +24,39 @@ export default function TripBookingsPage() {
 
   async function loadTrips() {
 
+    
+
     try {
+      
 
       const res =
         await getTripBookings();
 
-      setTrips(res.data);
+      const mapped = res.data.map(trip => ({
 
+  ...trip,
+
+  fromCity:
+    trip.from_city,
+
+  toCity:
+    trip.to_city,
+
+  tripDate:
+  trip.trip_date
+    || trip.tripDate,
+
+departureTime:
+  trip.departure_time
+    || trip.departureTime,
+
+arrivalTime:
+  trip.arrival_time
+    || trip.arrivalTime
+
+}));
+
+setTrips(mapped);
     } catch (err) {
 
       console.error(err);
@@ -183,11 +209,43 @@ export default function TripBookingsPage() {
 
               <tr key={trip.tripId}>
 
-                <td>
-                  {trip.from_city}
-                  {' → '}
-                  {trip.to_city}
-                </td>
+               <td>
+
+  <div
+    style={{
+      fontWeight: 600
+    }}
+  >
+    {trip.fromCity}
+→ {trip.toCity}
+  </div>
+
+  <div
+    style={{
+      fontSize: '0.72rem',
+      color: 'var(--muted)',
+      marginTop: '4px'
+    }}
+  >
+   📅 {
+ trip.tripDate
+    ? new Date(trip.tripDate)
+        .toLocaleDateString()
+    : '—'
+}
+  </div>
+
+  <div
+    style={{
+      fontSize: '0.72rem',
+      color: 'var(--accent2)'
+    }}
+  >
+    🕒 {trip.departureTime?.slice(0,5)}
+→ {trip.arrivalTime?.slice(0,5)}
+  </div>
+
+</td>
 
                 <td>
                   {trip.driverName || '—'}

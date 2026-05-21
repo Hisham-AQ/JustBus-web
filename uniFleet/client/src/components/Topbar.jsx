@@ -5,10 +5,10 @@ import { getAlerts, getTrips, getParcels } from '../services/api';
 const pageTitles = {
   '/': { title: 'Dashboard Overview', sub: 'Real-time monitoring active' },
   '/map': { title: 'Live Bus Map', sub: 'All routes — GPS tracking active' },
-  '/routes': { title: 'Route & Stop Management', sub: 'Configure university bus routes and stops' },
+  '/trips': { title: 'Route & Stop Management', sub: 'Configure university bus routes and stops' },
   '/fleet': { title: 'Bus Fleet Management', sub: 'Manage all university buses' },
   '/drivers': { title: 'Driver Management', sub: 'Assign and monitor drivers' },
-  '/trips': { title: 'Special Trips', sub: 'Schedule and manage special trips' },
+  '/special-trips': { title: 'Special Trips', sub: 'Schedule and manage special trips' },
   '/parcels': { title: 'Parcel Console', sub: 'Track parcels across trips' },
   '/blacklist': { title: 'Student Control', sub: 'Manage access, rewards, and student activity' },
   '/rewards': { title: 'Rewards Configuration', sub: 'Configure loyalty point rules' },

@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import LoginPage from './pages/LoginPage';
 import { useAuth } from './hooks/useAuth';
+import { Toaster } from "react-hot-toast";
 
 import DashboardPage   from './pages/DashboardPage';
 import LiveMapPage     from './pages/LiveMapPage';
@@ -16,6 +17,10 @@ import RewardsPage     from './pages/RewardsPage';
 import RatingsPage     from './pages/RatingsPage';
 import EmergencyPage   from './pages/EmergencyPage';
 import TripBookingsPage from './pages/TripBookingsPage';
+import LostItemsPage    from "./pages/LostItemsPage";
+import NotificationsPage from "./pages/NotificationsPage";
+
+
 
 function ProtectedLayout({ children }) {
   const { token } = useAuth();
@@ -48,8 +53,20 @@ export default function App() {
         <Route path="/ratings"   element={<ProtectedLayout><RatingsPage /></ProtectedLayout>} />
         <Route path="/emergency" element={<ProtectedLayout><EmergencyPage /></ProtectedLayout>} />
         <Route path="/trip-bookings" element={ <ProtectedLayout><TripBookingsPage /> </ProtectedLayout>} />
+        <Route path="/lost-items" element={<ProtectedLayout><LostItemsPage /></ProtectedLayout>} />
+        <Route path="/notifications" element={<ProtectedLayout><NotificationsPage /></ProtectedLayout>}/>
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
+        <Toaster
+    position="top-right"
+    toastOptions={{
+      style: {
+        background: "#111827",
+        color: "#fff",
+        border: "1px solid rgba(255,255,255,0.08)"
+      }
+    }}
+  />
     </BrowserRouter>
   );
 }

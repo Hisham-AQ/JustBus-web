@@ -25,6 +25,13 @@ export const getDashboardStats  = () => api.get('/dashboard/stats');
 export const getDriverActivity  = () => api.get('/drivers/activity');
 export const getWeeklyTrips     = () => api.get('/dashboard/weekly-trips');
 
+// live map
+export const getLiveBuses =
+  () =>
+    api.get(
+      '/admin/map/live-buses'
+    );
+
 // Buses
 export const getBuses           = () => api.get('/buses');
 export const createBus          = (data) => api.post('/buses', data);
@@ -51,6 +58,7 @@ export const blacklistStudent   = (id, data) => api.post(`/students/${id}/blackl
 export const blacklistManualStudent = (data) => api.post('/students/blacklist-manual', data);
 export const liftBlacklist      = (id) => api.delete(`/students/${id}/blacklist`);
 export const deleteStudent       = (id) => api.delete(`/students/${id}`);
+export const updateStudentBalance = (id, amount) =>api.put(`/admin/wallet/students/${id}/balance`, { amount });
 
 // ================= TRIP BOOKINGS =================
 export const getTripBookings = () => api.get('/admin/trip-bookings');
@@ -88,6 +96,10 @@ export const deleteParcel         = (id) => api.delete(`/admin/parcels/${id}`);
 export const verifyParcelDelivery = (id, pin_code) => api.patch(`/admin/parcels/${id}/verify-delivery`,{ pin_code });
 export const getParcelNotifications = () => api.get('/admin/parcels/notifications/count');
 
+//lost item
+export const getAllLostItems = () => api.get("/admin/lost-items");
+export const updateLostItemStatus = (id, status) => api.put(`/admin/lost-items/${id}`, {status});
+
 // Ratings
 export const getRatingsAnalytics = () => api.get('/admin/ratings/analytics');
 export const getRatingComments   = () => api.get('/admin/ratings/comments');
@@ -106,6 +118,11 @@ export const createReward = (data) => api.post('/admin/rewards', data);
 export const updateReward = (id, data) => api.put(`/admin/rewards/${id}`, data);
 export const deleteReward = (id) => api.delete(`/admin/rewards/${id}`);
 
+//notifications
+export const sendGlobalNotification = (data) => api.post("/admin/notifications/global", data);
+export const sendUserNotification = (data) => api.post("/admin/notifications/user", data);
+export const getAllNotifications = () => api.get("/admin/notifications");
+export const deleteNotification = (id) => api.delete(`/admin/notifications/${id}`);
 
 // ================= ADMIN POINTS =================
 export const addPoints = (data) => api.post('/admin/points/add', data);
@@ -115,6 +132,5 @@ export const getPointsHistory = (id) => api.get(`/admin/points/history/${id}`);
 
 
 // Auth
-export const login              = (email, password) => api.post('/auth/login', { email, password });
-
+export const login = (email, password) => api.post('/auth/admin/login', { email, password });
 export default api;

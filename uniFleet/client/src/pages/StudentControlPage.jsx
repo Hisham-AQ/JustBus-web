@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Pill from '../components/Pill';
 import { getStudents, blacklistStudent, liftBlacklist, blacklistManualStudent, deleteStudent, addPoints,
-removePoints, getPointsHistory } from '../services/api';
+removePoints, getPointsHistory, updateStudentBalance } from '../services/api';
 
 function Modal({ title, onClose, children }) {
   return (
@@ -80,6 +80,15 @@ const [pointsHistory,
   const [reason, setReason] = useState('');
   const [until, setUntil] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showBalanceModal,
+  setShowBalanceModal] =
+  useState(false);
+
+const [balanceForm,
+  setBalanceForm] =
+  useState({
+    amount: ''
+  });
 
   useEffect(() => { loadData(); }, []);
 
@@ -129,6 +138,44 @@ const [pointsHistory,
   }
 
   setShowPointsModal(true);
+}
+
+async function
+handleBalanceUpdate() {
+
+  try {
+
+    await updateStudentBalance(
+
+      selectedStudent.id,
+
+      balanceForm.amount
+
+    );
+
+    await loadData();
+
+    setShowBalanceModal(false);
+
+    setSuccessMessage(
+      '✅ Wallet updated successfully'
+    );
+
+    setTimeout(() => {
+
+      setSuccessMessage('');
+
+    }, 3000);
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      err.response?.data?.message
+      || 'Update failed'
+    );
+  }
 }
 
 async function handlePointsAction() {
@@ -378,13 +425,27 @@ setTargetStudent(null);
                   </td>
                   <td style={{ padding: '16px' }}>
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{student.name}</div>
-                    <div style={{
+                    
+<div style={{
   marginTop: '6px',
   fontSize: '.75rem',
   color: '#fbbf24',
   fontWeight: 700
 }}>
   ⭐ {student.points || 0} pts
+</div>
+
+<div style={{
+  marginTop: '4px',
+  fontSize: '.78rem',
+  color: '#22c55e',
+  fontWeight: 700
+}}>
+  💰 {
+    Number(
+      student.wallet_balance || 0
+    ).toFixed(2)
+  } JD
 </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{student.email}</div>
                   </td>
@@ -477,6 +538,28 @@ setTargetStudent(null);
   >
     ➖ Remove Point
   </button>
+
+  <button
+  className="btn btn-success"
+  style={{
+    fontSize: '0.72rem',
+    padding: '8px 12px',
+    borderRadius: '10px'
+  }}
+  onClick={() => {
+
+    setSelectedStudent(student);
+
+    setBalanceForm({
+      amount:
+        student.wallet_balance || 0
+    });
+
+    setShowBalanceModal(true);
+  }}
+>
+  💰 Edit Balance
+</button>
 
 </div>
                       
@@ -872,6 +955,86 @@ setTargetStudent(null);
           {pointsAction === 'add'
             ? '🎁 Add Points'
             : '➖ Remove Points'}
+        </button>
+
+      </div>
+
+    </div>
+
+  </Modal>
+
+)}
+
+{showBalanceModal && (
+
+  <Modal
+    title={`💰 Edit Wallet — ${selectedStudent?.name}`}
+    onClose={() =>
+      setShowBalanceModal(false)
+    }
+  >
+
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }}>
+
+      <div>
+
+        <label style={{
+          display: 'block',
+          fontSize: '.75rem',
+          color: 'var(--muted)',
+          fontWeight: 600
+        }}>
+          WALLET BALANCE
+        </label>
+
+        <input
+          type="number"
+          step="0.01"
+          style={inputStyle}
+          value={balanceForm.amount}
+          onChange={e =>
+            setBalanceForm({
+              amount:
+                e.target.value
+            })
+          }
+        />
+
+      </div>
+
+      <div style={{
+        display: 'flex',
+        gap: '12px'
+      }}>
+
+        <button
+          className="btn btn-ghost"
+          style={{
+            flex: 1,
+            padding: '12px',
+            borderRadius: '12px'
+          }}
+          onClick={() =>
+            setShowBalanceModal(false)
+          }
+        >
+          Cancel
+        </button>
+
+        <button
+          className="btn btn-primary"
+          style={{
+            flex: 1,
+            padding: '12px',
+            borderRadius: '12px'
+          }}
+          onClick={handleBalanceUpdate}
+        >
+          💰 Save Balance
         </button>
 
       </div>

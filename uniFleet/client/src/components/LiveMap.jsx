@@ -1,16 +1,24 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+
 
 function makeBusIcon(isEmergency, isTracked, isVisible, routeColor = '#10b981') {
-  if (!isVisible) {
-    return L.divIcon({ className: '', html: '<div style="display:none;"></div>', iconSize: [0,0] });
-  }
+ if (!isVisible) {
 
+    return L.divIcon({
+      className: '',
+      html: '<div style="display:none;"></div>',
+      iconSize: [0,0]
+    });
+
+  }
   const bgColor = isEmergency ? '#ef4444' : routeColor;
   const size = isTracked ? 20 : 16;
   const offset = size / 2;
-  const border = '2px solid #000'; // black border matching the image
+  const border = '2px solid #000'; 
   
   const glow = isTracked ? `box-shadow: 0 0 0 3px rgba(255,255,255,0.8);` : '';
 
@@ -26,40 +34,20 @@ function makeBusIcon(isEmergency, isTracked, isVisible, routeColor = '#10b981') 
   });
 }
 
-const ROUTE_PATHS = {
-  'Route 10A': [
-    [31.9539, 35.9106],
-    [31.9600, 35.9150],
-    [31.9680, 35.9150],
-    [31.9800, 35.9400]
-  ],
-  'Route 15': [
-    [31.9539, 35.9106],
-    [31.9400, 35.9200],
-    [31.9300, 35.9500],
-    [31.9100, 35.9800]
-  ],
-  'University Express': [
-    [31.9539, 35.9106],
-    [31.9700, 35.9350],
-    [31.9850, 35.9550],
-    [31.9950, 35.9750]
-  ]
-};
+
 
 const ROUTE_COLORS = {
-  'Route 10A': '#3b82f6', // الأزرق
-  'Route 15': '#8b5cf6', // البنفسجي
-  'University Express': '#f59e0b', // البرتقالي
+  'Route 10A': '#3b82f6',
+  'Route 15': '#8b5cf6',
+  'University Express': '#f59e0b',
 };
 
 export default function LiveMap({ buses = [], height = '430px', trackedBusId = null, activeRoute = null }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef({});
-  const pathsRef = useRef({});
+  const routingRef = useRef({});
   
-  // حفظ آخر باص أو خط تم تتبعه لمنع إعادة التكبير التلقائي المزعج
   const lastTrackedRef = useRef(null);
   const lastActiveRouteRef = useRef(null);
 
@@ -70,44 +58,18 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
       zoom: 12,
       zoomControl: true,
     });
-    L.tileLayer('http://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}', {
+    L.tileLayer('https://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
       attribution: 'Map data ©2026 Google'
     }).addTo(mapInstance.current);
   }, []);
 
-  const basePathsRef = useRef({});
 
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    // Draw static base routes ONCE to give context
-    Object.keys(ROUTE_PATHS).forEach(routeName => {
-        if (!basePathsRef.current[routeName]) {
-            const poly = L.polyline(ROUTE_PATHS[routeName], {
-                color: ROUTE_COLORS[routeName],
-                weight: 5,
-                opacity: 0.75, // Increased visibility based on feedback
-                dashArray: '8, 8'
-            }).addTo(mapInstance.current);
-            basePathsRef.current[routeName] = poly;
-        }
-    });
 
-    // Update static routes visibility based on active filter
-    Object.keys(basePathsRef.current).forEach(routeName => {
-        const poly = basePathsRef.current[routeName];
-        if (activeRoute && routeName === activeRoute) {
-             poly.setStyle({ opacity: 0.75 }); // show clearly ONLY if it's the active route
-        } else {
-             poly.setStyle({ opacity: 0 }); // hide by default or if not selected
-        }
-    });
-    
-    // ==========================================
-    // 1. نظام الـ Zoom والـ Focus الذكي
-    // ==========================================
     let clearedTracked = false;
     let clearedRoute = false;
 
@@ -136,11 +98,7 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
           validCoords.forEach(c => bounds.extend(c));
           hasBounds = true;
       }
-      // Always include the actual route path so it zooms even if empty
-      if (ROUTE_PATHS[activeRoute]) {
-          ROUTE_PATHS[activeRoute].forEach(coord => bounds.extend(coord));
-          hasBounds = true;
-      }
+
 
       if (hasBounds) {
           mapInstance.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: true });
@@ -168,7 +126,7 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
       
       let isVisible = true;
       
-      // التتبع له الأولوية القصوى
+      
       if (trackedBusId && hasTrackedBusInList) {
           if (!isTracked) isVisible = false;
       } else if (activeRoute) {
@@ -190,10 +148,15 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
            markersRef.current[strBusId].remove();
            delete markersRef.current[strBusId];
         }
-        if (pathsRef.current[strBusId]) {
-           pathsRef.current[strBusId].remove();
-           delete pathsRef.current[strBusId];
-        }
+        if (routingRef.current[strBusId]) {
+
+  mapInstance.current.removeControl(
+    routingRef.current[strBusId]
+  );
+
+  delete routingRef.current[strBusId];
+}
+        
       } else {
         if (markersRef.current[strBusId]) {
           markersRef.current[strBusId].setLatLng([parseFloat(bus.lat), parseFloat(bus.lng)]);
@@ -207,34 +170,130 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
             .addTo(mapInstance.current);
           markersRef.current[strBusId] = marker;
         }
+       const destination = bus.dropoffLocation;
 
-        const historyPath = ROUTE_PATHS[assignedRouteName] || ROUTE_PATHS['Route 10A'];
-        const numId = parseInt(strBusId.replace(/\D/g, '')) || 100;
-        const offset = (numId % 5) * 0.0001;
-        
-        const assignedPathCoords = historyPath.map(coord => [coord[0] + offset, coord[1] + offset]);
-        if (bus.lat && bus.lng) {
-            assignedPathCoords.push([parseFloat(bus.lat), parseFloat(bus.lng)]);
-        }
 
-        const polylineOptions = {
-          color: routeColor, 
-          weight: isTracked ? 6 : 4, 
-          opacity: isTracked ? 1.0 : 0.8,
-          dashArray: isTracked ? '10, 10' : null 
-        };
+  const shouldShowRoute =
+  isTracked || activeRoute === assignedRouteName;
 
-        if (!pathsRef.current[strBusId]) {
-           const poly = L.polyline(assignedPathCoords, polylineOptions)
-           .bindTooltip(tooltipText, { sticky: true, className: 'path-tooltip' })
-           .addTo(mapInstance.current);
-           pathsRef.current[strBusId] = poly;
-        } else {
-           pathsRef.current[strBusId].setLatLngs(assignedPathCoords);
-           pathsRef.current[strBusId].setStyle(polylineOptions);
-           pathsRef.current[strBusId].setTooltipContent(tooltipText);
-        }
-      }
+if (!shouldShowRoute) {
+
+  if (routingRef.current[strBusId]) {
+
+    mapInstance.current.removeControl(
+      routingRef.current[strBusId]
+    );
+
+    delete routingRef.current[strBusId];
+  }
+
+  return;
+}
+  if (
+  destination[0] &&
+  destination[1] &&
+  shouldShowRoute
+) 
+{
+
+    const previousLat =
+  routingRef.current[strBusId]
+    ?.getWaypoints?.()[0]?.latLng?.lat;
+
+const previousLng =
+  routingRef.current[strBusId]
+    ?.getWaypoints?.()[0]?.latLng?.lng;
+if (routingRef.current[strBusId]) {
+
+  if (
+  Math.abs(previousLat - parseFloat(bus.lat)) < 0.0001 &&
+  Math.abs(previousLng - parseFloat(bus.lng)) < 0.0001
+) {
+  return;
+}
+
+  routingRef.current[strBusId].setWaypoints([
+    
+    L.latLng(
+      parseFloat(bus.lat),
+      parseFloat(bus.lng)
+    ),
+    L.latLng(
+      destination[0],
+      destination[1]
+    )
+    
+  ]);
+
+} else {
+
+  const routingControl =
+    L.Routing.control({
+
+      router: L.Routing.osrmv1({
+  serviceUrl:
+    'https://routing.openstreetmap.de/routed-car/route/v1'
+}),
+
+      waypoints: [
+
+        L.latLng(
+          parseFloat(bus.lat),
+          parseFloat(bus.lng)
+        ),
+
+        L.latLng(
+          destination[0],
+          destination[1]
+        )
+
+      ],
+
+      lineOptions: {
+        styles: [
+          {
+            color: routeColor,
+            weight: isTracked ? 7 : 5,
+            opacity: 1,
+            smoothFactor: 1
+          }
+        ]
+      },
+
+      createMarker: () => null,
+
+      addWaypoints: false,
+
+      draggableWaypoints: false,
+
+      fitSelectedRoutes: false,
+
+      show: false,
+
+      routeWhileDragging: false
+
+    }).addTo(mapInstance.current);
+
+  routingControl.on(
+    'routesfound',
+    function(e) {
+
+      const route = e.routes[0];
+
+      const etaMinutes =
+        Math.ceil(
+          route.summary.totalTime / 60
+        );
+
+      console.log(
+        `ETA: ${etaMinutes} mins`
+      );
+    }
+  );
+
+  routingRef.current[strBusId] =
+    routingControl;
+}}}
     });
 
     // Cleanup removed buses
@@ -244,12 +303,17 @@ export default function LiveMap({ buses = [], height = '430px', trackedBusId = n
            delete markersRef.current[id];
        }
     });
-    Object.keys(pathsRef.current).forEach(id => {
-       if (!currentBusIds.has(id)) {
-           pathsRef.current[id].remove();
-           delete pathsRef.current[id];
-       }
-    });
+    Object.keys(routingRef.current).forEach(id => {
+
+   if (!currentBusIds.has(id)) {
+
+      mapInstance.current.removeControl(
+        routingRef.current[id]
+      );
+
+      delete routingRef.current[id];
+   }
+});
 
   }, [buses, trackedBusId, activeRoute]);
 

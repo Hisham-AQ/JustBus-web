@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import StatCard from '../components/StatCard';
 import LiveMap from '../components/LiveMap';
 import Pill from '../components/Pill';
-import { useSocket } from '../hooks/useSocket';
+import { getLiveBuses } from '../services/api';
+
 
 export default function LiveMapPage() {
   const [busPositions, setBusPositions] = useState([]);
@@ -17,15 +18,78 @@ export default function LiveMapPage() {
   const [driverMessage, setDriverMessage] = useState('');
   const [messageStatus, setMessageStatus] = useState('');
 
-  useSocket({
-    onBusLocation: (data) => {
-      setBusPositions(prev => {
-        const idx = prev.findIndex(b => b.busId === data.busId);
-        if (idx >= 0) { const u = [...prev]; u[idx] = data; return u; }
-        return [...prev, data];
-      });
-    },
-  });
+  useEffect(() => {
+
+  loadLiveBuses();
+
+  const interval =
+    setInterval(
+      loadLiveBuses,
+      5000
+    );
+
+  return () =>
+    clearInterval(interval);
+
+}, []);
+
+async function loadLiveBuses() {
+
+  try {
+
+    const res =
+      await getLiveBuses();
+
+      console.log(res.data);
+
+    const formatted =
+      res.data.map(bus => ({
+
+        busId: bus.id,
+
+        pickupLocation:
+  typeof bus.pickup_location === 'string'
+    ? JSON.parse(bus.pickup_location)
+    : bus.pickup_location,
+
+dropoffLocation:
+  typeof bus.dropoff_location === 'string'
+    ? JSON.parse(bus.dropoff_location)
+    : bus.dropoff_location,
+
+        plateNumber:
+          bus.plate_number,
+
+        driverName:
+          bus.driver_name,
+
+        lat:
+          Number(
+            bus.current_lat
+          ),
+
+        lng:
+          Number(
+            bus.current_lng
+          ),
+
+        status:
+          bus.status,
+
+        routeId:
+  `${bus.from_city} → ${bus.to_city}`
+      }));
+
+    setBusPositions(
+      formatted
+    );
+
+  } catch (err) {
+
+    console.error(err);
+  }
+}
+
 
   const active = busPositions.filter(b => b.status !== 'fault').length;
   const emergency = busPositions.filter(b => b.status === 'fault').length;

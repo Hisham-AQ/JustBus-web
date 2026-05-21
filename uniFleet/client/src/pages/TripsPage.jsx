@@ -18,8 +18,8 @@ const emptyForm = {
   fromCity: '',
   toCity: '',
 
-  pickupStations: [],
-  dropoffStations: [],
+pickupStations: [],
+dropoffStations: [],
 
   departureTime: '',
   arrivalTime: '',
@@ -140,6 +140,12 @@ async function loadBuses() {
       fromCity: trip.fromCity,
 toCity: trip.toCity,
 
+    pickupLocation:
+  trip.pickupLocation,
+
+dropoffLocation:
+  trip.dropoffLocation,
+
 driverId: trip.driverId,
 busId: trip.busId,
 driverName: trip.driverName,
@@ -154,7 +160,8 @@ arrivalTime: trip.arrivalTime
   : '',
 
 tripDate: trip.tripDate
-  ? String(trip.tripDate).split('T')[0]
+  ? new Date(trip.tripDate)
+      .toLocaleDateString('en-CA')
   : '',
 
 price: trip.price,
@@ -220,12 +227,22 @@ durationMinutes: route.durationMinutes || '',
 
     status: route.status || 'scheduled',
 
-    pickupStations: [],
-    dropoffStations: [],
+    pickupStations:
+  Array.isArray(route.pickupLocation)
+    ? route.pickupLocation.map(s => s.id)
+    : [],
+
+dropoffStations:
+  Array.isArray(route.dropoffLocation)
+    ? route.dropoffLocation.map(s => s.id)
+    : [],
 
     departureTime: route.departureTime || '',
     tripDate: route.tripDate || '',
-    price: route.price || ''
+    price:
+  route.price != null
+    ? Number(route.price)
+    : '',
   });
 
   setErrors({});
@@ -288,7 +305,10 @@ driverId: form.driverId || null,
   departureTime: form.departureTime,
 arrivalTime: form.arrivalTime,
 durationMinutes: form.durationMinutes,
-  price: form.price,
+  price:
+  form.price === ''
+    ? null
+    : Number(form.price),
   availableSeats: 30,
   tripDate: form.tripDate
 };
@@ -386,7 +406,30 @@ durationMinutes: form.durationMinutes,
 
 <span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>
   Bus: {route.busPlate || 'Unassigned'}
-</span></div>
+</span>
+<br />
+
+<span
+  style={{
+    fontSize: '0.7rem',
+    color: 'var(--accent2)'
+  }}
+>
+  📅 {route.tripDate}
+</span>
+
+<br />
+
+<span
+  style={{
+    fontSize: '0.7rem',
+    color: 'var(--accent4)'
+  }}
+>
+  🕒 {route.departureTime}
+  → {route.arrivalTime}
+</span>
+</div>
                   </td>
                   <td>
                     <span style={{
@@ -524,6 +567,8 @@ durationMinutes: form.durationMinutes,
 <FormField label="Price">
   <input
     type="number"
+step="0.01"
+min="0"
     style={inputStyle}
     value={form.price}
     onChange={e => setForm({ ...form, price: e.target.value })}

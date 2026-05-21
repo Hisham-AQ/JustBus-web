@@ -20,7 +20,9 @@ const navItems = [
 { section: 'Operations', items: [
   { to: '/special-trips', icon: '📅', label: 'Special Trips' },
   { to: '/parcels', icon: '📦', label: 'Parcel Console' },
+  { to: '/lost-items', icon: '🎒', label: 'Lost & Found' },
   { to: '/trip-bookings', icon: '🎫', label: 'Trip Bookings' },
+  { to: '/notifications', icon: '🔔', label: 'Notifications' },
 ]},
   { section: 'Students', items: [
     { to: '/blacklist', icon: '🎓', label: 'Student Control' },
