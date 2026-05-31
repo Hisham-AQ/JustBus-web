@@ -27,6 +27,7 @@ const navItems = [
   { section: 'Students', items: [
     { to: '/blacklist', icon: '🎓', label: 'Student Control' },
     { to: '/rewards', icon: '⭐', label: 'Rewards Config' },
+    { to: "/cancellation-requests", icon: "❌", label: "Cancellation Requests"}
   ]},
   { section: 'Analytics', items: [
     { to: '/ratings', icon: '📊', label: 'Ratings Analytics' },

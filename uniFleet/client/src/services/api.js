@@ -26,11 +26,7 @@ export const getDriverActivity  = () => api.get('/drivers/activity');
 export const getWeeklyTrips     = () => api.get('/dashboard/weekly-trips');
 
 // live map
-export const getLiveBuses =
-  () =>
-    api.get(
-      '/admin/map/live-buses'
-    );
+export const getLiveBuses = () => api.get('/admin/map/live-buses');
 
 // Buses
 export const getBuses           = () => api.get('/buses');
@@ -107,10 +103,11 @@ export const getDriverRatings    = () => api.get('/admin/ratings/drivers');
 export const getDriverReviews    = (id) => api.get(`/admin/ratings/drivers/${id}/reviews`);
 
 // Alerts
-export const getAlerts          = () => api.get('/alerts');
-export const resolveAlert       = (id) => api.patch(`/alerts/${id}/resolve`);
+export const getAlerts = () => api.get('/admin/panic');
+export const resolveAlert = (id) => api.put(`/admin/panic/${id}/resolve`);
+export const getResolvedAlerts = () => api.get('/admin/panic/history');
 
-// ================= REWARDS =================
+// Rewards
 export const getRewards = () => api.get('/admin/rewards');
 export const getRewardRules = () => api.get('/admin/rewards/rules');
 export const updateRewardRules = (data) => api.put('/admin/rewards/rules', data);
@@ -124,10 +121,15 @@ export const sendUserNotification = (data) => api.post("/admin/notifications/use
 export const getAllNotifications = () => api.get("/admin/notifications");
 export const deleteNotification = (id) => api.delete(`/admin/notifications/${id}`);
 
-// ================= ADMIN POINTS =================
+// Admin points
 export const addPoints = (data) => api.post('/admin/points/add', data);
 export const removePoints = (data) => api.post('/admin/points/remove', data);
 export const getPointsHistory = (id) => api.get(`/admin/points/history/${id}`);
+
+// cancel reservation
+export const getCancellationRequests = () => api.get("/admin/cancellation-requests");
+export const approveCancellationRequest = (id) => api.put(`/admin/cancellation-requests/${id}/approve`);
+export const rejectCancellationRequest = (id) => api.put(`/admin/cancellation-requests/${id}/reject`);
 
 
 

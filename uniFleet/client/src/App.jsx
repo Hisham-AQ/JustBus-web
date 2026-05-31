@@ -19,6 +19,7 @@ import EmergencyPage   from './pages/EmergencyPage';
 import TripBookingsPage from './pages/TripBookingsPage';
 import LostItemsPage    from "./pages/LostItemsPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import CancellationRequestsPage from "./pages/CancellationRequestsPage";
 
 
 
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/trip-bookings" element={ <ProtectedLayout><TripBookingsPage /> </ProtectedLayout>} />
         <Route path="/lost-items" element={<ProtectedLayout><LostItemsPage /></ProtectedLayout>} />
         <Route path="/notifications" element={<ProtectedLayout><NotificationsPage /></ProtectedLayout>}/>
+        <Route path="/cancellation-requests"  element={<ProtectedLayout><CancellationRequestsPage /></ProtectedLayout>}/>
         <Route path="*"          element={<Navigate to="/" replace />} />
       </Routes>
         <Toaster
