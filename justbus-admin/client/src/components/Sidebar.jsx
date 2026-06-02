@@ -39,11 +39,11 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   function handleLogout() {
-    localStorage.removeItem('unifleet_token');
+    localStorage.removeItem('justbus_token');
     navigate('/login');
   }
 
-  const adminRaw = localStorage.getItem('unifleet_admin');
+  const adminRaw = localStorage.getItem('justbus_admin');
   const admin = adminRaw ? JSON.parse(adminRaw) : { name: 'Super Admin', role: 'System Administrator' };
   const initials = admin.name?.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || 'SA';
   const [parcelCount,

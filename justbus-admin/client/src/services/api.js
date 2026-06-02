@@ -7,7 +7,7 @@ const api = axios.create({
 
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('unifleet_token');
+  const token = localStorage.getItem('justbus_token');
 
   console.log("TOKEN USED:", token); // DEBUG
 

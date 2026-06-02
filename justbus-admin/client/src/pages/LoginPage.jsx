@@ -20,10 +20,10 @@ export default function LoginPage() {
     const res = await login(email, password);
 
     // ✅ store token
-    localStorage.setItem('unifleet_token', res.data.token);
+    localStorage.setItem('justbus_token', res.data.token);
 
     // ✅ store role (optional but useful)
-    localStorage.setItem('unifleet_role', res.data.role);
+    localStorage.setItem('justbus_role', res.data.role);
 
     setToken(res.data.token);
 

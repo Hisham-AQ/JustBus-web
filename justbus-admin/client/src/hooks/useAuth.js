@@ -2,11 +2,11 @@
 import { useState, useEffect } from 'react';
 
 export function useAuth() {
-  const [token, setToken] = useState(localStorage.getItem('unifleet_token'));
+  const [token, setToken] = useState(localStorage.getItem('justbus_token'));
 
   useEffect(() => {
     const handleStorageChange = () => {
-      setToken(localStorage.getItem('unifleet_token'));
+      setToken(localStorage.getItem('justbus_token'));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);

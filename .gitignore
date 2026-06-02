@@ -29,8 +29,8 @@ dist-ssr
 !.env.example
 
 # Client and Server builds
-uniFleet/client/dist/
-uniFleet/server/node_modules/
-uniFleet/client/node_modules/
-uniFleet/server/.env
-uniFleet/client/.env
+justbus-admin/client/dist/
+justbus-admin/server/node_modules/
+justbus-admin/client/node_modules/
+justbus-admin/server/.env
+justbus-admin/client/.env
