@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 import StatCard from '../components/StatCard';
 import LiveMap from '../components/LiveMap';
 import Pill from '../components/Pill';
 import { getDashboardStats, getDriverRatings,getDriverActivity, getWeeklyTrips } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
+
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
