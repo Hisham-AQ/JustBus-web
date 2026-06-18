@@ -5,7 +5,13 @@ import { getDrivers, createDriver, updateDriver, deleteDriver, getBuses } from '
 const STATUS_OPTIONS = ['active', 'inactive', 'suspended'];
 
 const emptyForm = {
-  name: '', phone: '', licenseNumber: '', status: 'active', busId: '',
+  name: '',
+  email: '',
+  password: '',
+  phone: '',
+  licenseNumber: '',
+  status: 'active',
+  busId: '',
 };
 
 const inputStyle = {
@@ -110,12 +116,14 @@ export default function DriversPage() {
   function openEdit(driver) {
     setEditing(driver);
     setForm({
-      name: driver.name,
-      phone: driver.phone,
-      licenseNumber: driver.licenseNumber,
-      status: driver.status,
-      busId: driver.busId || '',
-    });
+  name: driver.name,
+  email: driver.email || '',
+  password: '',
+  phone: driver.phone,
+  licenseNumber: driver.licenseNumber,
+  status: driver.status,
+  busId: driver.busId || '',
+});
     setErrors({});
     setShowModal(true);
   }
@@ -124,6 +132,10 @@ export default function DriversPage() {
     const e = {};
     if (!form.name.trim()) e.name = 'Name is required';
     if (!form.phone.trim()) e.phone = 'Phone number is required';
+    if (!editing) {
+  if (!form.email.trim()) e.email = 'Email is required';
+  if (!form.password.trim()) e.password = 'Password is required';
+}
     if (!form.licenseNumber.trim()) e.licenseNumber = 'License number is required';
     return e;
   }
@@ -133,13 +145,17 @@ export default function DriversPage() {
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setSaving(true);
     try {
-      const payload = {
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        licenseNumber: form.licenseNumber.trim(),
-        status: form.status,
-        busId: form.busId || null,
-      };
+const payload = {
+  name: form.name.trim(),
+  email: form.email.trim(),
+  phone: form.phone.trim(),
+  licenseNumber: form.licenseNumber.trim(),
+  status: form.status,
+  busId: form.busId || null,
+};
+if (!editing) {
+  payload.password = form.password;
+}
       if (editing) {
         await updateDriver(editing.id, payload);
       } else {
@@ -373,6 +389,44 @@ export default function DriversPage() {
               />
             </FormField>
           </div>
+
+          <div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '14px'
+  }}
+>
+  <FormField label="Email Address" error={errors.email}>
+    <input
+      style={inputStyle}
+      type="email"
+      placeholder="driver@example.com"
+      value={form.email}
+      onChange={(e) =>
+        setForm(f => ({
+          ...f,
+          email: e.target.value
+        }))
+      }
+    />
+  </FormField>
+
+  <FormField label="Password" error={errors.password}>
+    <input
+      style={inputStyle}
+      type="password"
+      placeholder="Enter password"
+      value={form.password}
+      onChange={(e) =>
+        setForm(f => ({
+          ...f,
+          password: e.target.value
+        }))
+      }
+    />
+  </FormField>
+</div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <FormField label="License Number" error={errors.licenseNumber}>
