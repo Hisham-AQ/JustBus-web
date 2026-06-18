@@ -3,18 +3,12 @@ import React, { useState, useEffect } from 'react';
 import {
   getRewardRules,
   updateRewardRules,
-  getLeaderboard,
   getRewards,
   createReward,
 updateReward,
 deleteReward
 } from '../services/api';
 
-const MEDALS = {
-  1: '🥇',
-  2: '🥈',
-  3: '🥉'
-};
 
 export default function RewardsPage() {
   const [rules, setRules] = useState({
@@ -22,8 +16,6 @@ export default function RewardsPage() {
   bonus_threshold: 0,
   reward: '' });
   const [rewards, setRewards] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showRewardModal,
   setShowRewardModal] =
@@ -45,27 +37,23 @@ const [rewardForm,
 
   useEffect(() => { loadData(); }, []);
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const [
-  rulesRes,
-  boardRes,
-  rewardsRes
-] = await Promise.all([
-  getRewardRules(),
-  getLeaderboard(),
-  getRewards()
-]);
-setRewards(rewardsRes.data);
-      setRules(rulesRes.data);
-      setLeaderboard(boardRes.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+async function loadData() {
+  try {
+    const [
+      rulesRes,
+      rewardsRes
+    ] = await Promise.all([
+      getRewardRules(),
+      getRewards()
+    ]);
+
+    setRewards(rewardsRes.data);
+    setRules(rulesRes.data);
+
+  } catch (e) {
+    console.error(e);
   }
+}
 
   function openCreateReward() {
 
@@ -202,7 +190,7 @@ function handleRuleChange(
         <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Configure points and redemption rules</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
         
         {/* Left: Configuration */}
         <div style={{ 
@@ -315,41 +303,22 @@ function handleRuleChange(
     </div>
 
     <select
-      value={rules.reward}
-      onChange={e =>
-        handleRuleChange(
-          'reward',
-          e.target.value
-        )
-      }
-      style={{
-        width: '100%',
-        height: '44px',
-        borderRadius: '10px',
-        border: '1px solid var(--border)',
-        background: 'var(--surface)',
-        color: 'white',
-        padding: '0 14px'
-      }}
+  value={rules.reward}
+  onChange={(e) =>
+    handleRuleChange('reward', e.target.value)
+  }
+>
+  <option value="">Select reward</option>
+
+  {rewards.map((reward) => (
+    <option
+      key={reward.id}
+      value={reward.id}
     >
-
-      <option value="">
-        Select reward
-      </option>
-
-      <option value="free_trip">
-        Free Trip
-      </option>
-
-      <option value="discount">
-        Discount
-      </option>
-
-      <option value="free_parcel">
-        Free Parcel
-      </option>
-
-    </select>
+      {reward.title}
+    </option>
+  ))}
+</select>
 
   </div>
 
@@ -394,11 +363,11 @@ function handleRuleChange(
     Rewards Catalog
   </h3>
 
-  <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  }}>
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))',
+  gap: '16px'
+}}>
 
     {rewards.map(reward => (
 
@@ -478,57 +447,6 @@ function handleRuleChange(
   </div>
 
 </div>
-        </div>
-
-        {/* Right: Leaderboard */}
-        <div style={{ 
-          background: 'rgba(15, 23, 42, 0.4)', 
-          borderRadius: '16px', border: '1px solid var(--border)', 
-          padding: '24px' 
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <span style={{ fontSize: '0.9rem' }}>📊</span>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'Syne, sans-serif' }}>Top Students by Points</h3>
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>⏳ Calculating rankings...</div>
-          ) : (
-            <table style={{ background: 'none', border: 'none' }}>
-              <thead style={{ borderBottom: '1px solid var(--border)' }}>
-                <tr>
-                  <th style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--muted)', padding: '12px 8px' }}>Rank</th>
-                  <th style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--muted)', padding: '12px 8px' }}>Student</th>
-                  <th style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--muted)', padding: '12px 8px' }}>Points</th>
-                  <th style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--muted)', padding: '12px 8px' }}>Free Rides</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>No stats available yet.</td>
-                  </tr>
-                )}
-                {leaderboard.map((student, idx) => (
-                  <tr key={student.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem' }}>
-                      {MEDALS[idx + 1] || idx + 1}
-                    </td>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', fontWeight: 600 }}>
-                      {student.name}
-                    </td>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', color: 'var(--accent2)', fontWeight: 700 }}>
-                      {student.points || 0} pts
-                    </td>
-                    <td style={{ padding: '16px 8px', fontSize: '0.82rem', fontWeight: 800 }}>
-                     {student.freeRides || 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
         </div>
 
       </div>
