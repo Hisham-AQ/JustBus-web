@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 import StatCard from '../components/StatCard';
 import LiveMap from '../components/LiveMap';
 import Pill from '../components/Pill';
-import { getDashboardStats, getAlerts, getDriverRatings,getDriverActivity, getWeeklyTrips } from '../services/api';
+import { getDashboardStats, getDriverRatings,getDriverActivity, getWeeklyTrips } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
-
-function timeAgo(dateStr) {
-  const diff = (Date.now() - new Date(dateStr)) / 1000;
-  if (diff < 60) return `${Math.floor(diff)}s ago`;
-  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-  return `${Math.floor(diff/3600)}h ago`;
-}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -22,13 +14,10 @@ export default function DashboardPage() {
   pendingParcels: 0
 });
 
-  const [alerts, setAlerts] = useState([]);
-
   const [driverActivity,
 setDriverActivity] =
 useState([]);
   const [busPositions, setBusPositions] = useState([]);
-  const [emergencyAlert, setEmergencyAlert] = useState(null);
   const navigate = useNavigate();
   const [driverRatings,
 setDriverRatings] =
@@ -73,48 +62,29 @@ useState([]);
   .catch(() => {});
 
     getDashboardStats().then(r => setStats(prev => ({...prev, ...r.data}))).catch(() => {});
-    getAlerts().then(r => {
-      const active = r.data.filter(a => a.status === 'active');
-      setAlerts(active.slice(0, 4));
-      if (active.length > 0) setEmergencyAlert(active[0]);
-    }).catch(() => {});
   }, []);
 
-
-
-
   useSocket({
-    onBusLocation: (data) => {
-      setBusPositions(prev => {
-        const idx = prev.findIndex(b => b.busId === data.busId);
-        if (idx >= 0) { const u = [...prev]; u[idx] = data; return u; }
-        return [...prev, data];
-      });
-    },
-    onAlertNew: (alert) => {
-      setEmergencyAlert(alert);
-      setAlerts(prev => [alert, ...prev].slice(0, 4));
-    },
-  });
+  onBusLocation: (data) => {
+    setBusPositions(prev => {
+      const idx = prev.findIndex(
+        b => b.busId === data.busId
+      );
+
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = data;
+        return updated;
+      }
+
+      return [...prev, data];
+    });
+  }
+});
 
   const location = useLocation();
   const searchQuery = new URLSearchParams(location.search).get('q') || '';
   const q = searchQuery.toLowerCase();
-
-  const dummyAlerts = [
-    { id: 'demo-1', isDummy: true, type: 'warning', icon: '⚡', title: 'Route 5B — 18 min delay', text: 'Heavy traffic near South Campus junction', time: '28m ago', searchStr: 'route 5b delay heavy traffic junction' },
-    { id: 'demo-2', isDummy: true, type: 'info', icon: 'ℹ️', title: 'Special Trip Scheduled', text: 'Tomorrow 08:00 — Admin approval pending', time: '1h ago', searchStr: 'special trip scheduled admin approval' }
-  ];
-  
-  const displayAlerts = alerts.length > 0 ? alerts : dummyAlerts;
-
-  const filteredAlerts = displayAlerts.filter(a => {
-    if (!q) return true;
-    if (a.isDummy) return a.searchStr.includes(q);
-    return a.message?.toLowerCase().includes(q) || 
-           a.bus?.plateNumber?.toLowerCase().includes(q) ||
-           a.studentId?.toLowerCase().includes(q);
-  });
 
 const filteredDrivers =
   driverActivity.filter(d =>
@@ -166,56 +136,13 @@ const filteredDrivers =
       </div>
 
       {/* Map + Alerts */}
-      <div className="dashboard-grid">
+      <div style={{ marginBottom: '24px'}}>
         <div className="panel">
           <div className="panel-header">
             <div className="panel-title">🗺 Live Bus Locations</div>
             <button className="panel-action" onClick={() => navigate('/map')}>Full Map →</button>
           </div>
           <LiveMap buses={busPositions} height="300px" />
-        </div>
-
-        <div className="panel">
-          <div className="panel-header">
-            <div className="panel-title">🚨 Emergency Console</div>
-            <button className="panel-action" onClick={() => navigate('/emergency')}>View All →</button>
-          </div>
-          <div>
-            {filteredAlerts.length === 0 && searchQuery && (
-              <div style={{ color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center', padding: '30px 0' }}>
-                No search results found
-              </div>
-            )}
-            {!searchQuery && alerts.length === 0 && filteredAlerts.length === 0 && (
-              <div style={{ color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center', padding: '30px 0' }}>
-                ✅ No active emergencies
-              </div>
-            )}
-            {filteredAlerts.map((alert) => {
-              if (alert.isDummy) {
-                return (
-                  <div key={alert.id} className={`alert-item ${alert.type}`}>
-                    <span className="alert-icon">{alert.icon}</span>
-                    <div className="alert-text">
-                      <div className="alert-title">{alert.title}</div>
-                      <div className="alert-desc">{alert.text}</div>
-                    </div>
-                    <span className="alert-time">{alert.time}</span>
-                  </div>
-                );
-              }
-              return (
-                <div key={alert.id} className="alert-item critical">
-                  <span className="alert-icon">⚠️</span>
-                  <div className="alert-text">
-                    <div className="alert-title">Panic — Student #{alert.studentId?.slice(-6)}</div>
-                    <div className="alert-desc">Bus {alert.bus?.plateNumber} · {alert.message || 'Emergency triggered'}</div>
-                  </div>
-                  <span className="alert-time">{timeAgo(alert.createdAt)}</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 
