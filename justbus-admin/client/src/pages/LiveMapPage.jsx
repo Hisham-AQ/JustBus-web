@@ -7,11 +7,8 @@ import { getLiveBuses } from '../services/api';
 
 export default function LiveMapPage() {
   const [busPositions, setBusPositions] = useState([]);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [trackOpen, setTrackOpen] = useState(false);
   const [trackedBusId, setTrackedBusId] = useState(null);
-  const [activeRoute, setActiveRoute] = useState(null);
-  const [tempRoute, setTempRoute] = useState('');
   
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -107,65 +104,10 @@ dropoffLocation:
         <div className="panel-header">
           <div className="panel-title">🗺 Full Live Map — All Routes</div>
           <div style={{ display: 'flex', gap: '12px', position: 'relative', zIndex: 50 }}>
-            {/* Filter Route Button */}
-            <div style={{ position: 'relative' }}>
-              <button className="btn btn-ghost" onClick={() => { setFilterOpen(!filterOpen); setTrackOpen(false); }} style={{ 
-                fontSize: '0.78rem', padding: '6px 12px',
-                background: filterOpen ? 'var(--surface2)' : 'transparent',
-                borderColor: filterOpen ? 'var(--accent)' : 'transparent',
-              }}>Filter Route</button>
-              
-              {filterOpen && (
-                <div style={{ 
-                  position: 'absolute', top: 'calc(100% + 12px)', right: 0, 
-                  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
-                  width: '300px', padding: '20px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', zIndex: 100
-                }}>
-                  <h4 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text)', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-                    🛤️ Filter Route
-                  </h4>
-                  
-                  <div style={{ marginBottom: '12px' }}>
-                      <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '6px' }}>Filter by Route Name</label>
-                    <select value={tempRoute} onChange={(e) => setTempRoute(e.target.value)} style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }}>
-                      <option value="">Select Route...</option>
-                      <option value="Route 10A">Route 10A</option>
-                      <option value="Route 15">Route 15</option>
-                      <option value="University Express">University Express</option>
-                    </select>
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '6px' }}>Direction</label>
-                    <select style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }}>
-                      <option>Both Directions</option>
-                      <option>Inbound (To University)</option>
-                      <option>Outbound (From University)</option>
-                    </select>
-                  </div>
-
-                  <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input type="checkbox" id="delayedOnly" style={{ cursor: 'pointer' }} />
-                    <label htmlFor="delayedOnly" style={{ fontSize: '0.75rem', color: 'var(--text)', cursor: 'pointer' }}>Status Filter: Delayed Only</label>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn btn-ghost" style={{ flex: 1, fontSize: '0.75rem' }} onClick={() => { setActiveRoute(null); setTempRoute(''); setFilterOpen(false); }}>Clear Filter</button>
-                    <button className="btn btn-primary" style={{ flex: 1, fontSize: '0.75rem' }} onClick={() => { setActiveRoute(tempRoute || null); setFilterOpen(false); }}>Apply Filter</button>
-                  </div>
-                  
-                  <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                    <button onClick={() => { setActiveRoute(null); setTempRoute(''); setFilterOpen(false); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}>
-                      Show All Active Buses
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Track Bus Button */}
             <div style={{ position: 'relative' }}>
-              <button className="btn btn-primary" onClick={() => { setTrackOpen(!trackOpen); setFilterOpen(false); }} style={{ 
+              <button className="btn btn-primary" onClick={() => { setTrackOpen(!trackOpen);}} style={{ 
                 fontSize: '0.78rem', padding: '6px 12px',
                 background: trackOpen || trackedBusId ? 'var(--accent)' : 'transparent', 
                 borderColor: 'var(--accent)',
@@ -208,7 +150,11 @@ dropoffLocation:
         
         {/* Map Container with LiveFocus Panel */}
         <div style={{ position: 'relative' }}>
-          <LiveMap buses={busPositions} height="480px" trackedBusId={trackedBusId} activeRoute={activeRoute} />
+          <LiveMap
+  buses={busPositions}
+  height="480px"
+  trackedBusId={trackedBusId}
+/>
           
           {trackedBusId && (() => {
             const trackedBus = busPositions.find(b => String(b.busId) === String(trackedBusId));

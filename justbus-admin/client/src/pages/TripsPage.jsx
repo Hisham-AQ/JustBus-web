@@ -14,6 +14,7 @@ import {
 const STATUS_OPTIONS = ['scheduled','ongoing','completed','cancelled'];
 
 
+
 const emptyForm = {
   fromCity: '',
   toCity: '',
@@ -93,7 +94,11 @@ export default function RoutesPage() {
   const [search, setSearch] = useState('');
   const [stations, setStations] = useState([]);
   const [drivers, setDrivers] = useState([]);
-const [buses, setBuses] = useState([]);
+  const [buses, setBuses] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
+
+
+
 
 useEffect(() => {
   loadData();
@@ -282,8 +287,9 @@ if (!form.toCity.trim())
   return e;
 }
 
-  async function handleSave() {
+async function handleSave() {
   const errs = validate();
+
   if (Object.keys(errs).length > 0) {
     setErrors(errs);
     return;
@@ -292,39 +298,58 @@ if (!form.toCity.trim())
   setSaving(true);
 
   try {
-   const payload = {
-fromCity: form.fromCity,
-toCity: form.toCity,
+    const payload = {
+      fromCity: form.fromCity,
+      toCity: form.toCity,
 
-driverId: form.driverId || null,
+      driverId: form.driverId || null,
 
-  pickupLocation: form.pickupStations,
-  dropoffLocation: form.dropoffStations,
+      pickupLocation: form.pickupStations,
+      dropoffLocation: form.dropoffStations,
 
-  status: form.status,
-  departureTime: form.departureTime,
-arrivalTime: form.arrivalTime,
-durationMinutes: form.durationMinutes,
-  price:
-  form.price === ''
-    ? null
-    : Number(form.price),
-  availableSeats: 30,
-  tripDate: form.tripDate
-};
+      status: form.status,
+      departureTime: form.departureTime,
+      arrivalTime: form.arrivalTime,
+      durationMinutes: form.durationMinutes,
+
+      price:
+        form.price === ''
+          ? null
+          : Number(form.price),
+
+      availableSeats: 30,
+      tripDate: form.tripDate
+    };
 
     if (editing) {
       await updateTrip(editing.id, payload);
+
+      setSuccessMessage(
+        'Trip updated successfully!'
+      );
     } else {
       await createTrip(payload);
+
+      setSuccessMessage(
+        'Trip created successfully!'
+      );
     }
 
-  setForm(emptyForm);
+    setShowModal(false);
+    setForm(emptyForm);
+
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000);
+
     await loadData();
+
   } catch (err) {
     setErrors({
-  general: err.response?.data?.message || err.message
-});
+      general:
+        err.response?.data?.message ||
+        err.message
+    });
   } finally {
     setSaving(false);
   }
@@ -357,6 +382,24 @@ durationMinutes: form.durationMinutes,
           style={{ ...inputStyle, width: '300px', marginLeft: 'auto' }}
         />
       </div>
+
+
+{successMessage && (
+  <div
+    style={{
+      background: 'rgba(16,185,129,.15)',
+      border: '1px solid #10b981',
+      color: '#10b981',
+      padding: '12px',
+      borderRadius: '10px',
+      marginBottom: '16px',
+      fontWeight: 600
+    }}
+  >
+    ✅ {successMessage}
+  </div>
+)}
+
 
       {/* Routes Table */}
       <div className="panel">
