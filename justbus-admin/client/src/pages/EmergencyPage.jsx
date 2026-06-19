@@ -21,7 +21,6 @@ const DISPATCH_OPTIONS = [
 
 export default function EmergencyPage() {
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
-  const [filter, setFilter] = useState('All');
   const [selectedIncident, setSelectedIncident] = useState(null);
   
   // Modals / Menus
@@ -30,28 +29,15 @@ export default function EmergencyPage() {
   const [activeResolveAlert, setActiveResolveAlert] = useState(null);
   const [reportText, setReportText] = useState('');
   const [resolveError, setResolveError] = useState('');
-  const [isBroadcastOpen, setBroadcastOpen] = useState(false);
 
   // Transitions
-  const filteredAlerts = useMemo(() => {
-    if (filter === 'All') return alerts;
-    return alerts.filter(a => a.severity === filter);
-  }, [alerts, filter]);
+const mapIncidents = useMemo(() => {
+  if (selectedIncident) {
+    return [selectedIncident];
+  }
+  return alerts.length > 0 ? [alerts[0]] : [];
+}, [alerts, selectedIncident]);
 
-  const mapIncidents = useMemo(() => {
-    if (filter === 'Critical') return alerts.filter(a => a.severity === 'Critical');
-    if (selectedIncident) return [selectedIncident];
-    return alerts.length > 0 ? [alerts[0]] : [];
-  }, [alerts, filter, selectedIncident]);
-
-  useEffect(() => {
-    // Critical Mode Effect: Flash the topbar bell
-    if (filter === 'Critical') {
-      document.body.setAttribute('data-emergency-impact', 'true');
-    } else {
-      document.body.removeAttribute('data-emergency-impact');
-    }
-  }, [filter]);
 
   const handleResolve = () => {
     if (activeResolveAlert.severity === 'Critical' && reportText.trim().length < 10) {
@@ -65,82 +51,61 @@ export default function EmergencyPage() {
   };
 
   return (
-    <div className={`content ${filter === 'Critical' ? 'emergency-overlay' : ''}`}>
+    <div className="content">
       
       {/* Header Area */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h1 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.8rem', color: '#fff' }}>
-            Emergency Console
-          </h1>
-          <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
-            {filter === 'Critical' ? `⚠️ Filtering by Critical Priority — ${filteredAlerts.length} Active Threats` : 'Fleet Safety Command Center'}
-          </p>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button 
-            onClick={() => setBroadcastOpen(true)}
-            style={{ padding: '12px 24px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 20px rgba(239, 68, 68, 0.3)' }}
-          >📢 Broadcast Alert</button>
-        </div>
-      </div>
+<div style={{ marginBottom: '32px' }}>
+  <div
+    style={{
+      background: 'var(--surface)',
+      borderRadius: '24px',
+      border: '1px solid var(--border)',
+      padding: '20px'
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '16px'
+      }}
+    >
+      <h3
+        style={{
+          fontSize: '1rem',
+          fontWeight: 700,
+          fontFamily: 'Syne'
+        }}
+      >
+        Live Incident Tracking
+      </h3>
 
-      {/* Top Grid: Map & Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) 1fr', gap: '24px', marginBottom: '32px' }}>
-        <div style={{ background: 'var(--surface)', borderRadius: '24px', border: '1px solid var(--border)', padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-             <h3 style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'Syne' }}>{filter === 'Critical' ? 'Emergency View Enabled' : 'Live Incident Tracking'}</h3>
-             <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Satellite Hybrid Mode Active</span>
-          </div>
-          <EmergencyMap incidents={mapIncidents} height="360px" mode={filter === 'Critical' ? 'emergency' : 'normal'} />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '24px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--muted)' }}>FILTER BY PRIORITY</h4>
-                {filter === 'Critical' && <span className="glow-dot"></span>}
-              </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {['All', 'Critical', 'Warning'].map(f => (
-                  <button 
-                    key={f}
-                    onClick={() => { setFilter(f); setSelectedIncident(null); }}
-                    style={{ 
-                      flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: 'none', fontWeight: 700,
-                      background: filter === f ? (f === 'Critical' ? '#ef4444' : 'var(--accent)') : 'var(--surface2)',
-                      color: filter === f ? '#fff' : 'var(--muted)',
-                      boxShadow: filter === f && f === 'Critical' ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none',
-                      transition: '0.3s'
-                    }}
-                  >{f}</button>
-                ))}
-              </div>
-           </div>
-
-           <div style={{ flex: 1, background: 'var(--surface)', borderRadius: '24px', border: '1px solid var(--border)', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-              <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent4)', marginBottom: '16px' }}>Protocol Status</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                 <div style={{ fontSize: '0.85rem' }}>✅ Security Guard Post: <span style={{ color: 'var(--accent4)' }}>READY</span></div>
-                 <div style={{ fontSize: '0.85rem' }}>📡 Backup Unit B-04: <span style={{ color: 'var(--accent)' }}>IDLE</span></div>
-                 <div style={{ fontSize: '0.85rem' }}>🚑 On-call Medical: <span style={{ color: 'var(--warn)' }}>TRANSIT</span></div>
-              </div>
-              <div style={{ position: 'absolute', bottom: '-20px', right: '-10px', fontSize: '5rem', opacity: 0.1 }}>🛡️</div>
-           </div>
-        </div>
-      </div>
+      <span
+        style={{
+          fontSize: '0.75rem',
+          color: 'var(--muted)'
+        }}
+      >
+        Satellite Hybrid Mode Active
+      </span>
+    </div>
+<EmergencyMap
+  incidents={mapIncidents}
+  height="360px"
+/>
+  </div>
+</div>
 
       {/* Priority Log */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {filteredAlerts.length === 0 ? (
+        {alerts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px', background: 'var(--surface)', borderRadius: '24px', border: '1px solid var(--border)' }}>
              <span style={{ fontSize: '3rem' }}>✅</span>
              <h4 style={{ marginTop: '12px', fontWeight: 800 }}>No Active Emergencies</h4>
              <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>All systems within normal parameters.</p>
           </div>
         ) : (
-          filteredAlerts.map(alert => (
+          alerts.map(alert => (
             <div 
               key={alert.id} 
               style={{ 
@@ -262,25 +227,9 @@ export default function EmergencyPage() {
        </div>
       )}
 
-      {/* Broadcast Modal */}
-      {isBroadcastOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(239, 68, 68, 0.4)', backdropFilter: 'blur(15px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-           <div style={{ background: 'var(--surface)', border: '2px solid #ef4444', borderRadius: '24px', padding: '32px', width: '480px', boxShadow: '0 0 50px rgba(239, 68, 68, 0.5)' }}>
-              <h2 style={{ fontFamily: 'Syne', fontWeight: 800, marginBottom: '12px', color: '#ef4444' }}>🚨 EMERGENCY BROADCAST</h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '24px' }}>This will trigger a full-screen alert and audio chime to ALL users.</p>
-              <textarea placeholder="Enter emergency notice..." style={{ width: '100%', height: '100px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '16px', color: '#fff', marginBottom: '24px' }} />
-              <div style={{ display: 'flex', gap: '12px' }}>
-                 <button onClick={() => setBroadcastOpen(false)} style={{ flex: 1, padding: '12px', background: 'none', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '10px' }}>Abort</button>
-                 <button onClick={() => setBroadcastOpen(false)} style={{ flex: 2, padding: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 800 }}>INIIATE BROADCAST</button>
-              </div>
-           </div>
-        </div>
-      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .emergency-overlay { position: relative; }
-        .emergency-overlay::after { content: ''; position: fixed; inset: 0; pointer-events: none; border: 4px solid rgba(239, 68, 68, 0.15); box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.1); border-radius: 0; z-index: 9999; animation: edge-glow 2s infinite; }
-        @keyframes edge-glow { 0%, 100% { border-color: rgba(239, 68, 68, 0.1); } 50% { border-color: rgba(239, 68, 68, 0.3); } }
+         { position: relative; }.emergency-overlay
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         @keyframes pulse-box { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
@@ -294,10 +243,6 @@ export default function EmergencyPage() {
           25% { transform: translateX(-5px); }
           75% { transform: translateX(5px); }
         }
-
-        /* Global Bell Pulsing Simulation */
-        [data-emergency-impact="true"] .icon-btn { animation: bell-pulse 0.5s infinite; color: #ef4444 !important; border-color: #ef4444 !important; }
-        @keyframes bell-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); box-shadow: 0 0 15px #ef4444; } 100% { transform: scale(1); } }
       `}} />
     </div>
   );

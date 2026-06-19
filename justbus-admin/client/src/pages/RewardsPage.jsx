@@ -176,7 +176,7 @@ function handleRuleChange(
   minHeight: '48px',
   borderRadius: '12px',
   border: '1px solid rgba(255,255,255,.08)',
-  background: 'rgba(255,255,255,.03)',
+  background: '#111827',
   color: 'white',
   padding: '0 14px',
   outline: 'none',
@@ -642,21 +642,35 @@ function handleRuleChange(
         style={modalInputStyle}
       >
 
-        <option value="">
-          Select reward type
-        </option>
+        <option
+  value="discount"
+  style={{
+    background: '#111827',
+    color: 'white'
+  }}
+>
+  Discount
+</option>
 
-        <option value="discount">
-          Discount
-        </option>
+<option
+  value="free_trip"
+  style={{
+    background: '#111827',
+    color: 'white'
+  }}
+>
+  Free Trip
+</option>
 
-        <option value="free_trip">
-          Free Trip
-        </option>
-
-        <option value="free_parcel">
-          Free Parcel
-        </option>
+<option
+  value="free_parcel"
+  style={{
+    background: '#111827',
+    color: 'white'
+  }}
+>
+  Free Parcel
+</option>
 
       </select>
 
