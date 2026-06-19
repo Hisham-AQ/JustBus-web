@@ -32,13 +32,20 @@ function Modal({ title, onClose, children }) {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      display: 'flex', alignItems: 'flex-start', 
+      justifyContent: 'center', padding: '20px', overflowY: 'auto',
     }}>
       <div style={{
-        background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: '16px', padding: '32px', width: '500px', maxWidth: '95vw',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
-      }}>
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: '16px',
+  padding: '32px',
+  width: '500px',
+  maxWidth: '95vw',
+  maxHeight: '90vh',
+  overflowY: 'auto',
+  boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+}}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '1rem' }}>{title}</h3>
           <button onClick={onClose} style={{
@@ -193,15 +200,9 @@ function openEdit(trip) {
     const headers = ["TRIP ID", "DATE & TIME", "BUS", "SEATS", "PRICE", "STATUS"];
     const rows = trips.map((trip, idx) => [
       `ST#${idx + 1}`,
-      new Date(trip.departure_time)
-  .toLocaleString([], {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }),
+      trip.departure_time,
       trip.busPlate || (trip.bus ? trip.bus.plateNumber : 'N/A'),
-`${trip.seats_available}/${trip.seats_total}`
+`${trip.seats_available}/${trip.seats_total}`,
       `${trip.price} JD`,
       trip.status
     ]);
@@ -265,13 +266,7 @@ function openEdit(trip) {
                   </td>
                   <td style={{ padding: '16px 20px' }}>
                     <div style={{ fontSize: '0.875rem' }}>
-                      {new Date(trip.departure_time)
-  .toLocaleString([], {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })}
+                      {trip.departure_time}
                     </div>
                   </td>
                   <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
@@ -331,9 +326,6 @@ function openEdit(trip) {
 
 
 <FormField label="Driver">
-
-
-
   <select
     style={inputStyle}
     value={form.driverId}
@@ -380,38 +372,34 @@ function openEdit(trip) {
   </div>
 
 )}
-
 </FormField>
 
 <FormField label="Departure Time">
-
   <input
-    type="time"
-    style={inputStyle}
-    value={form.departureTime}
-    onChange={e =>
-      setForm({
-        ...form,
-        departureTime: e.target.value
-      })
-    }
-  />
-
+  type="text"
+  style={inputStyle}
+  value={form.departureTime}
+  onChange={e =>
+    setForm({
+      ...form,
+      departureTime: e.target.value
+    })
+  }
+/>
 </FormField>
 
 <FormField label="Return Time">
-
-  <input
-    type="time"
-    style={inputStyle}
-    value={form.returnTime}
-    onChange={e =>
-      setForm({
-        ...form,
-        returnTime: e.target.value
-      })
-    }
-  />
+<input
+  type="text"
+  style={inputStyle}
+  value={form.returnTime}
+  onChange={e =>
+    setForm({
+      ...form,
+      returnTime: e.target.value
+    })
+  }
+/>
 </FormField>
 
 <FormField label="Duration">
