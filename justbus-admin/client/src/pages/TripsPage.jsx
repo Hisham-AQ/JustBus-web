@@ -416,8 +416,6 @@ async function handleSave() {
               <tr>
                 <th>Route ID</th>
                 <th>Name</th>
-                <th>Stops</th>
-                <th>Buses</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -425,7 +423,7 @@ async function handleSave() {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
+                  <td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)', padding: '30px' }}>
                     No trips found.
                   </td>
                 </tr>
@@ -473,19 +471,6 @@ async function handleSave() {
   → {route.arrivalTime}
 </span>
 </div>
-                  </td>
-                  <td>
-                    <span style={{
-                      background: 'rgba(129,140,248,.12)', color: 'var(--accent2)',
-                      padding: '2px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600
-                    }}>
-                      {route.stops?.length || 0} stops
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ color: 'var(--accent4)', fontWeight: 600 }}>
-                      {route._count?.buses || 0} buses
-                    </span>
                   </td>
                   <td><Pill status={route.status} /></td>
                   <td>
