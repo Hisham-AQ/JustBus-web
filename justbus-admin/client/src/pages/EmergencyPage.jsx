@@ -4,6 +4,7 @@ import { getAlerts, resolveAlert } from '../services/api';
 import EmergencyMap from '../components/EmergencyMap';
 
 
+
 const DISPATCH_OPTIONS = [
   { id: 'sec', name: 'University Security (Direct)', type: 'Emergency', icon: '👮‍♂️' },
   { id: 'civ', name: 'Civil Defense (JUST HQ)', type: 'Emergency', icon: '🚒' },
@@ -27,6 +28,7 @@ export default function EmergencyPage() {
   loadAlerts();
 }, []);
 
+console.log(alerts);
 
 async function loadAlerts() {
   try {
@@ -48,6 +50,7 @@ async function loadAlerts() {
 
     console.log("ALERTS FROM BACKEND:", res.data);
 
+    console.log("FORMATTED ALERTS:", formatted);
     setAlerts(formatted);
 
   } catch (err) {

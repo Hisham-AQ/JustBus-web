@@ -29,7 +29,7 @@ export default function EmergencyMap({ incidents = [], height = '300px', mode = 
       attributionControl: false
     });
 
-    L.tileLayer('http://{s}.google.com/vt?lyrs=y&x={x}&y={y}&z={z}', {
+    L.tileLayer('https://{s}.google.com/vt?lyrs=y&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(mapInstance.current);
@@ -37,6 +37,8 @@ export default function EmergencyMap({ incidents = [], height = '300px', mode = 
 
   useEffect(() => {
     if (!mapInstance.current) return;
+
+    console.log("INCIDENTS RECEIVED:", incidents);
 
     // Cleanup previous
     markersRef.current.forEach(m => m.remove());
