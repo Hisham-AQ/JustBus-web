@@ -237,23 +237,35 @@ export default function LostItemsPage() {
                         }}
                       >
 
-                        <button
-                          className="btn btn-primary"
-                          style={{
-                            fontSize:
-                              '0.72rem',
-                            padding:
-                              '6px 10px'
-                          }}
-                          onClick={() =>
-                            changeStatus(
-                              report.id,
-                              'found'
-                            )
-                          }
-                        >
-                          Mark Found
-                        </button>
+<button
+  className="btn btn-primary"
+  disabled={
+    report.status === 'found' ||
+    report.status === 'claimed'
+  }
+  style={{
+    fontSize: '0.72rem',
+    padding: '6px 10px',
+    opacity:
+      report.status === 'found' ||
+      report.status === 'claimed'
+        ? 0.5
+        : 1,
+    cursor:
+      report.status === 'found' ||
+      report.status === 'claimed'
+        ? 'not-allowed'
+        : 'pointer'
+  }}
+  onClick={() =>
+    changeStatus(
+      report.id,
+      'found'
+    )
+  }
+>
+  Mark Found
+</button>
 
                         <button
                           className="btn btn-ghost"
@@ -291,11 +303,22 @@ export default function LostItemsPage() {
                           Pending
                         </button>
 
-                        <button
+<button
   className="btn btn-primary"
+  disabled={
+    report.status === 'claimed'
+  }
   style={{
     fontSize: '0.72rem',
-    padding: '6px 10px'
+    padding: '6px 10px',
+    opacity:
+      report.status === 'claimed'
+        ? 0.5
+        : 1,
+    cursor:
+      report.status === 'claimed'
+        ? 'not-allowed'
+        : 'pointer'
   }}
   onClick={() =>
     changeStatus(
