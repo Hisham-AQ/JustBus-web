@@ -20,7 +20,7 @@ const DISPATCH_OPTIONS = [
 ];
 
 export default function EmergencyPage() {
-  const [alerts, setAlerts] = useState(INITIAL_ALERTS);
+  const [alerts, setAlerts] = useState([]);
   const [selectedIncident, setSelectedIncident] = useState(null);
   
   // Modals / Menus
@@ -30,31 +30,72 @@ export default function EmergencyPage() {
   const [reportText, setReportText] = useState('');
   const [resolveError, setResolveError] = useState('');
 
+  useEffect(() => {
+  loadAlerts();
+}, []);
+
+
+async function loadAlerts() {
+  try {
+    const res = await getAlerts();
+
+    const formatted = res.data.map(alert => ({
+      id: alert.id,
+      type: alert.issue_type,
+      vehicleId: alert.plate_number || "Unknown Bus",
+      location: `${alert.from_city || ""} → ${alert.to_city || ""}`,
+      lat: Number(alert.lat),
+      lng: Number(alert.lng),
+      severity: "Critical",
+      details: alert.note,
+      userName: alert.userName,
+      userPhone: alert.userPhone,
+      created_at: alert.created_at
+    }));
+
+    setAlerts(formatted);
+
+  } catch (err) {
+    console.error("LOAD ALERTS ERROR:", err);
+  }
+}
+
   // Transitions
-const mapIncidents = useMemo(() => {
+  const mapIncidents = useMemo(() => {
   if (selectedIncident) {
     return [selectedIncident];
   }
   return alerts.length > 0 ? [alerts[0]] : [];
-}, [alerts, selectedIncident]);
+  }, [alerts, selectedIncident]);
 
 
-  const handleResolve = () => {
-    if (activeResolveAlert.severity === 'Critical' && reportText.trim().length < 10) {
-      setResolveError('⚠ Mandatory Incident Report required for critical cases (min 10 chars).');
-      return;
-    }
-    setAlerts(prev => prev.filter(a => a.id !== activeResolveAlert.id));
+const handleResolve = async () => {
+  try {
+
+    await resolveAlert(
+      activeResolveAlert.id
+    );
+
+    setAlerts(prev =>
+      prev.filter(
+        a => a.id !== activeResolveAlert.id
+      )
+    );
+
     setActiveResolveAlert(null);
     setReportText('');
     setResolveError('');
-  };
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
     <div className="content">
       
       {/* Header Area */}
-<div style={{ marginBottom: '32px' }}>
+  <div style={{ marginBottom: '32px' }}>
   <div
     style={{
       background: 'var(--surface)',
@@ -89,12 +130,12 @@ const mapIncidents = useMemo(() => {
         Satellite Hybrid Mode Active
       </span>
     </div>
-<EmergencyMap
+  <EmergencyMap
   incidents={mapIncidents}
   height="360px"
-/>
+  />
   </div>
-</div>
+  </div>
 
       {/* Priority Log */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -123,7 +164,7 @@ const mapIncidents = useMemo(() => {
                   border: alert.severity === 'Critical' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent',
                   animation: alert.severity === 'Critical' ? 'pulse-box 2s infinite' : 'none'
                 }}>
-                  {alert.type.includes('Panic') ? '🆘' : alert.type.includes('Accident') ? '💥' : '⚙️'}
+                  (alert.type || '').includes('Panic') ? '🆘' : (alert.type || '').includes('Accident') ? '💥' : '⚙️'
                 </div>
                 <div>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
