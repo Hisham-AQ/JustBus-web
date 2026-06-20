@@ -3,13 +3,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getAlerts, resolveAlert } from '../services/api';
 import EmergencyMap from '../components/EmergencyMap';
 
-// --- MOCK DATA ---
-const INITIAL_ALERTS = [
-  { id: 'e1', type: 'Panic Button', vehicleId: 'Bus #07', location: 'Engineering Gate', lat: 32.4948, lng: 35.9912, severity: 'Critical', assignee: 'Officer Sami', time: '2 mins ago', details: 'Student trigger at engineering bus stop.' },
-  { id: 'e2', type: 'Mechanical Failure', vehicleId: 'Bus #12', location: 'Main Highway (KM 14)', lat: 32.5010, lng: 35.9820, severity: 'Warning', assignee: 'Unassigned', time: '8 mins ago', details: 'Engine smoke reported by driver.' },
-  { id: 'e3', type: 'Unauthorized Route', vehicleId: 'Bus #03', location: 'Downtown Area', lat: 32.4850, lng: 36.0020, severity: 'Warning', assignee: 'Officer Ahmad', time: '15 mins ago', details: 'Vehicle deviated from designated Route 15.' },
-  { id: 'e4', type: 'Accident Detection', vehicleId: 'Bus #19', location: 'Circle 4', lat: 32.4920, lng: 35.9950, severity: 'Critical', assignee: 'Officer Laila', time: 'Just now', details: 'G-Force impact detected. Automatic trigger.' }
-];
 
 const DISPATCH_OPTIONS = [
   { id: 'sec', name: 'University Security (Direct)', type: 'Emergency', icon: '👮‍♂️' },
@@ -52,6 +45,8 @@ async function loadAlerts() {
       userPhone: alert.userPhone,
       created_at: alert.created_at
     }));
+
+    console.log("ALERTS FROM BACKEND:", res.data);
 
     setAlerts(formatted);
 
@@ -158,14 +153,30 @@ const handleResolve = async () => {
               onClick={() => setSelectedIncident(alert)}
             >
               <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                <div style={{ 
-                  width: '56px', height: '56px', borderRadius: '14px', background: 'var(--surface2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem',
-                  border: alert.severity === 'Critical' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent',
-                  animation: alert.severity === 'Critical' ? 'pulse-box 2s infinite' : 'none'
-                }}>
-                  (alert.type || '').includes('Panic') ? '🆘' : (alert.type || '').includes('Accident') ? '💥' : '⚙️'
-                </div>
+                <div
+  style={{
+    width: '56px',
+    height: '56px',
+    borderRadius: '14px',
+    background: 'var(--surface2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.5rem',
+    border: alert.severity === 'Critical'
+      ? '1px solid rgba(239, 68, 68, 0.3)'
+      : '1px solid transparent',
+    animation: alert.severity === 'Critical'
+      ? 'pulse-box 2s infinite'
+      : 'none'
+  }}
+>
+  {(alert.type || '').includes('Panic')
+    ? '🆘'
+    : (alert.type || '').includes('Accident')
+    ? '💥'
+    : '⚙️'}
+</div>
                 <div>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                       <h4 style={{ fontWeight: 800 }}>{alert.severity === 'Critical' ? 'CRITICAL: ' : ''}{alert.type}</h4>
@@ -270,7 +281,6 @@ const handleResolve = async () => {
 
 
       <style dangerouslySetInnerHTML={{ __html: `
-         { position: relative; }.emergency-overlay
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         @keyframes pulse-box { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
