@@ -5,6 +5,11 @@ export default function Pill({ status }) {
     active: 'active',
     inactive: 'inactive',
     pending: 'pending',
+
+    found: 'active',
+    claimed: 'active',
+    rejected: 'inactive',
+
     'en-route': 'en-route',
     'en route': 'en-route',
     blacklisted: 'blacklisted',
@@ -17,6 +22,13 @@ export default function Pill({ status }) {
     canceled: 'inactive',
     cancelled: 'inactive',
   };
-  const cls = map[status?.toLowerCase()] || 'pending';
-  return <span className={`pill ${cls}`}>{status}</span>;
+
+  const cls =
+    map[status?.toLowerCase()] || 'pending';
+
+  return (
+    <span className={`pill ${cls}`}>
+      {status}
+    </span>
+  );
 }

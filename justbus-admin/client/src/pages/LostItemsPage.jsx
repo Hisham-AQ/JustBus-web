@@ -291,6 +291,22 @@ export default function LostItemsPage() {
                           Pending
                         </button>
 
+                        <button
+  className="btn btn-primary"
+  style={{
+    fontSize: '0.72rem',
+    padding: '6px 10px'
+  }}
+  onClick={() =>
+    changeStatus(
+      report.id,
+      'claimed'
+    )
+  }
+>
+  Claimed
+</button>
+
                       </div>
 
                     </td>
